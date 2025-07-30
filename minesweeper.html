@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>扫雷</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
+      padding: 0;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100vh;
+      flex: 1;
+    }
+    
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .left-section {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+    
+    .center-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+    
+    .right-section {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 1;
+    }
+    
+    .new-game-btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #ff6b6b 100%);
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(255, 107, 107, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    
+    .new-game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s ease;
+    }
+    
+    .new-game-btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.3s ease;
+    }
+    
+    .new-game-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 
+        0 12px 35px rgba(255, 107, 107, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+      background: linear-gradient(135deg, #ee5a24 0%, #ff6b6b 50%, #ee5a24 100%);
+    }
+    
+    .new-game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .new-game-btn:hover::after {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .new-game-btn:active {
+      transform: translateY(-1px) scale(1.02);
+    }
+    
+    .timer-display {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 20px;
+      padding: 8px 20px;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+    
+    .timer-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      letter-spacing: 1px;
+    }
+    
+    .best-time-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 8px 16px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(80, 200, 120, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    
+    .info-title {
+      font-size: 10px;
+      color: #a0a0a0;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .best-time-value {
+      font-size: 14px;
+      font-weight: bold;
+      color: #50C878;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .game-board {
+      background: rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      min-height: 0; /* 确保flex子项可以收缩 */
+    }
+    
+    #mineField {
+      display: grid;
+      gap: 2px;
+      background: rgba(187, 173, 160, 0.8);
+      border-radius: 12px;
+      padding: 12px;
+      position: relative;
+      box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      /* 移除固定宽度，让其自适应 */
+      width: fit-content;
+      height: fit-content;
+      max-width: calc(100vw - 30px);
+      max-height: calc(100vh - 120px);
+    }
+    
+    .cell {
+      background: rgba(238, 228, 218, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      position: relative;
+      aspect-ratio: 1;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .cell:active {
+      background: rgba(255, 255, 255, 0.9);
+      transform: scale(0.95);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .cell.revealed {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(0, 0, 0, 0.2);
+      cursor: default;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .cell.flagged {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: white;
+      border-color: #ff6b6b;
+      box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
+    }
+    
+    .cell.mine {
+      background: linear-gradient(135deg, #ff4757, #c44569);
+      color: white;
+      border-color: #ff4757;
+    }
+    
+    .cell.exploded {
+      background: linear-gradient(135deg, #ff3838, #ff1744);
+      animation: explode 0.5s ease-out;
+    }
+    
+    @keyframes explode {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    
+    .cell-1 { color: #1976d2; }
+    .cell-2 { color: #388e3c; }
+    .cell-3 { color: #f57c00; }
+    .cell-4 { color: #7b1fa2; }
+    .cell-5 { color: #d32f2f; }
+    .cell-6 { color: #00796b; }
+    .cell-7 { color: #303f9f; }
+    .cell-8 { color: #424242; }
+    
+    .game-over {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+    }
+    
+    .game-over h2 {
+      font-size: 48px;
+      color: #ff4d4d;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+    }
+    
+    .game-win {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+    }
+    
+    .game-win h2 {
+      font-size: 48px;
+      color: #50C878;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+    }
+    
+    .final-time {
+      font-size: 32px;
+      margin-bottom: 30px;
+    }
+    
+    .new-record {
+      font-size: 24px;
+      color: #FFD700;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    
+    .restart-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #ff416c, #ff4b2b);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .restart-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(255, 75, 43, 0.6);
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .game-header {
+        padding: 12px 15px;
+      }
+      
+      .new-game-btn {
+        padding: 10px 18px;
+        font-size: 12px;
+        border-radius: 20px;
+      }
+      
+      .timer-value {
+        font-size: 24px;
+      }
+      
+      .timer-display {
+        padding: 6px 16px;
+        border-radius: 16px;
+      }
+      
+      .best-time-box {
+        padding: 6px 12px;
+        border-radius: 12px;
+      }
+      
+      .best-time-value {
+        font-size: 12px;
+      }
+      
+      .info-title {
+        font-size: 9px;
+      }
+      
+      .game-board {
+        padding: 12px;
+      }
+      
+      #mineField {
+        padding: 8px;
+        gap: 1px;
+        border-radius: 10px;
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 100px);
+      }
+      
+      .cell {
+        font-size: 12px;
+        border-width: 1px;
+        border-radius: 3px;
+      }
+      
+      .game-over h2, .game-win h2 {
+        font-size: 36px;
+      }
+      
+      .final-time {
+        font-size: 24px;
+      }
+      
+      .new-record {
+        font-size: 20px;
+      }
+      
+      .restart-btn {
+        padding: 15px 40px;
+        font-size: 18px;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .game-header {
+        padding: 10px 12px;
+      }
+      
+      .new-game-btn {
+        padding: 8px 14px;
+        font-size: 11px;
+      }
+      
+      .timer-value {
+        font-size: 20px;
+      }
+      
+      .timer-display {
+        padding: 5px 12px;
+      }
+      
+      .best-time-box {
+        padding: 5px 10px;
+      }
+      
+      .best-time-value {
+        font-size: 11px;
+      }
+      
+      .cell {
+        font-size: 10px;
+      }
+      
+      .game-board {
+        padding: 10px;
+      }
+      
+      #mineField {
+        padding: 6px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 90px);
+      }
+    }
+    
+    @media (max-width: 320px) {
+      .new-game-btn {
+        padding: 6px 12px;
+        font-size: 10px;
+      }
+      
+      .timer-value {
+        font-size: 18px;
+      }
+      
+      .best-time-value {
+        font-size: 10px;
+      }
+      
+      .game-board {
+        padding: 8px;
+      }
+      
+      #mineField {
+        padding: 4px;
+        max-width: calc(100vw - 16px);
+        max-height: calc(100vh - 80px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <!-- 游戏头部 -->
+    <div class="game-header">
+      <div class="left-section">
+        <button class="new-game-btn" id="newGameBtn">新游戏</button>
+      </div>
+      <div class="center-section">
+        <div class="timer-display">
+          <div class="timer-value" id="timer">0.00</div>
+        </div>
+      </div>
+      <div class="right-section">
+        <div class="best-time-box">
+          <div class="info-title">最佳</div>
+          <div class="best-time-value" id="bestTime">--</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 游戏面板 -->
+    <div class="game-board">
+      <div id="mineField"></div>
+    </div>
+  </div>
+  
+  <div class="game-over" id="gameOver">
+    <h2>游戏失败!</h2>
+    <div class="final-time">时间: <span id="finalTime">0.00</span>秒</div>
+    <button class="restart-btn" id="restartBtn">重新开始</button>
+  </div>
+  
+  <div class="game-win" id="gameWin">
+    <h2>恭喜！你赢了！🎉</h2>
+    <div class="final-time">时间: <span id="winTime">0.00</span>秒</div>
+    <div class="new-record" id="newRecord" style="display: none;">🎉 新纪录！</div>
+    <button class="restart-btn" id="restartWinBtn">重新开始</button>
+  </div>
+
+  <script>
+    // 游戏配置 - 只保留简单难度
+    const gameConfig = { rows: 9, cols: 9, mines: 10 };
+    
+    // 游戏状态
+    let gameBoard = [];
+    let gameStarted = false;
+    let gameEnded = false;
+    let startTime = 0;
+    let timerInterval = null;
+    let revealedCells = 0;
+    let totalCells = 0;
+    
+    // 触摸相关变量
+    let touchStartTime = 0;
+    let longPressTimer = null;
+    let isLongPress = false;
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      setupEventListeners();
+      loadBestTime();
+      newGame();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 新游戏按钮
+      document.getElementById('newGameBtn').addEventListener('click', newGame);
+      document.getElementById('restartBtn').addEventListener('click', newGame);
+      document.getElementById('restartWinBtn').addEventListener('click', newGame);
+    }
+    
+    // 加载最佳时间
+    function loadBestTime() {
+      const bestTime = localStorage.getItem('minesweeper_best_time');
+      if (bestTime) {
+        document.getElementById('bestTime').textContent = `${bestTime}s`;
+      }
+    }
+    
+    // 保存最佳时间
+    function saveBestTime(time) {
+      const currentBest = localStorage.getItem('minesweeper_best_time');
+      if (!currentBest || parseFloat(time) < parseFloat(currentBest)) {
+        localStorage.setItem('minesweeper_best_time', time);
+        document.getElementById('bestTime').textContent = `${time}s`;
+        return true; // 新纪录
+      }
+      return false;
+    }
+    
+    // 新游戏
+    function newGame() {
+      gameBoard = [];
+      gameStarted = false;
+      gameEnded = false;
+      revealedCells = 0;
+      totalCells = gameConfig.rows * gameConfig.cols;
+      
+      // 重置UI
+      document.getElementById('timer').textContent = '0.00';
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('gameWin').style.display = 'none';
+      document.getElementById('newRecord').style.display = 'none';
+      
+      // 停止计时器
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      
+      // 创建游戏板
+      createBoard();
+      renderBoard();
+    }
+    
+    // 创建游戏板
+    function createBoard() {
+      // 初始化空白游戏板
+      for (let i = 0; i < gameConfig.rows; i++) {
+        gameBoard[i] = [];
+        for (let j = 0; j < gameConfig.cols; j++) {
+          gameBoard[i][j] = {
+            isMine: false,
+            isRevealed: false,
+            isFlagged: false,
+            neighborMines: 0
+          };
+        }
+      }
+      
+      // 随机放置地雷
+      let minesPlaced = 0;
+      while (minesPlaced < gameConfig.mines) {
+        const row = Math.floor(Math.random() * gameConfig.rows);
+        const col = Math.floor(Math.random() * gameConfig.cols);
+        
+        if (!gameBoard[row][col].isMine) {
+          gameBoard[row][col].isMine = true;
+          minesPlaced++;
+        }
+      }
+      
+      // 计算每个格子周围的地雷数量
+      for (let i = 0; i < gameConfig.rows; i++) {
+        for (let j = 0; j < gameConfig.cols; j++) {
+          if (!gameBoard[i][j].isMine) {
+            gameBoard[i][j].neighborMines = countNeighborMines(i, j);
+          }
+        }
+      }
+    }
+    
+    // 计算周围地雷数量
+    function countNeighborMines(row, col) {
+      let count = 0;
+      
+      for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+          const newRow = row + i;
+          const newCol = col + j;
+          
+          if (newRow >= 0 && newRow < gameConfig.rows && 
+              newCol >= 0 && newCol < gameConfig.cols && 
+              gameBoard[newRow][newCol].isMine) {
+            count++;
+          }
+        }
+      }
+      
+      return count;
+    }
+    
+    // 渲染游戏板
+    function renderBoard() {
+      const mineField = document.getElementById('mineField');
+      
+      // 设置网格样式
+      mineField.style.gridTemplateColumns = `repeat(${gameConfig.cols}, 1fr)`;
+      mineField.style.gridTemplateRows = `repeat(${gameConfig.rows}, 1fr)`;
+      
+      // 获取可用空间
+      const headerHeight = document.querySelector('.game-header').offsetHeight;
+      const availableWidth = window.innerWidth - 30; // 减去padding
+      const availableHeight = window.innerHeight - headerHeight - 40; // 减去header和padding
+      
+      // 计算最优单元格大小
+      const maxCellWidth = (availableWidth - 24) / gameConfig.cols; // 减去mineField的padding和gap
+      const maxCellHeight = (availableHeight - 24) / gameConfig.rows;
+      
+      // 确保单元格是正方形，并且不会太小或太大
+      const cellSize = Math.min(
+        Math.max(maxCellWidth, maxCellHeight), 
+        Math.min(availableWidth / gameConfig.cols * 0.9, availableHeight / gameConfig.rows * 0.9),
+        50 // 最大尺寸限制
+      );
+      
+      // 确保最小尺寸
+      const finalCellSize = Math.max(cellSize, 25);
+      
+      // 清空现有内容
+      mineField.innerHTML = '';
+      
+      // 创建格子
+      for (let i = 0; i < gameConfig.rows; i++) {
+        for (let j = 0; j < gameConfig.cols; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = i;
+          cell.dataset.col = j;
+          cell.style.width = `${finalCellSize}px`;
+          cell.style.height = `${finalCellSize}px`;
+          cell.style.fontSize = `${Math.max(finalCellSize * 0.4, 10)}px`;
+          
+          // 添加事件监听器
+          cell.addEventListener('click', (e) => handleCellClick(e, i, j));
+          cell.addEventListener('contextmenu', (e) => handleRightClick(e, i, j));
+          
+          // 移动端长按事件
+          cell.addEventListener('touchstart', (e) => handleTouchStart(e, i, j));
+          cell.addEventListener('touchend', (e) => handleTouchEnd(e, i, j));
+          cell.addEventListener('touchmove', () => {
+            if (longPressTimer) {
+              clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          });
+          
+          mineField.appendChild(cell);
+        }
+      }
+      
+      updateDisplay();
+    }
+    
+    // 处理触摸开始
+    function handleTouchStart(e, row, col) {
+      e.preventDefault();
+      touchStartTime = Date.now();
+      isLongPress = false;
+      
+      longPressTimer = setTimeout(() => {
+        isLongPress = true;
+        navigator.vibrate && navigator.vibrate(50); // 震动反馈
+        handleRightClick(e, row, col);
+      }, 500);
+    }
+    
+    // 处理触摸结束
+    function handleTouchEnd(e, row, col) {
+      e.preventDefault();
+      
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      
+      if (!isLongPress && Date.now() - touchStartTime < 500) {
+        handleCellClick(e, row, col);
+      }
+    }
+    
+    // 处理格子点击
+    function handleCellClick(e, row, col) {
+      e.preventDefault();
+      
+      if (gameEnded || gameBoard[row][col].isFlagged) {
+        return;
+      }
+      
+      if (!gameStarted) {
+        startGame();
+      }
+      
+      revealCell(row, col);
+    }
+    
+    // 处理右键点击（标记地雷）
+    function handleRightClick(e, row, col) {
+      e.preventDefault();
+      
+      if (gameEnded || gameBoard[row][col].isRevealed) {
+        return;
+      }
+      
+      toggleFlag(row, col);
+    }
+    
+    // 开始游戏
+    function startGame() {
+      gameStarted = true;
+      startTime = Date.now();
+      
+      timerInterval = setInterval(() => {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        document.getElementById('timer').textContent = elapsed;
+      }, 10); // 每10毫秒更新一次，实现更精确的计时
+    }
+    
+    // 揭示格子
+    function revealCell(row, col) {
+      if (row < 0 || row >= gameConfig.rows || col < 0 || col >= gameConfig.cols ||
+          gameBoard[row][col].isRevealed || gameBoard[row][col].isFlagged) {
+        return;
+      }
+      
+      gameBoard[row][col].isRevealed = true;
+      revealedCells++;
+      
+      if (gameBoard[row][col].isMine) {
+        // 踩到地雷
+        gameOver();
+        return;
+      }
+      
+      // 如果是空格子，自动揭示周围格子
+      if (gameBoard[row][col].neighborMines === 0) {
+        for (let i = -1; i <= 1; i++) {
+          for (let j = -1; j <= 1; j++) {
+            revealCell(row + i, col + j);
+          }
+        }
+      }
+      
+      updateDisplay();
+      checkWin();
+    }
+    
+    // 切换标记
+    function toggleFlag(row, col) {
+      gameBoard[row][col].isFlagged = !gameBoard[row][col].isFlagged;
+      updateDisplay();
+    }
+    
+    // 更新显示
+    function updateDisplay() {
+      const cells = document.querySelectorAll('.cell');
+      
+      for (let i = 0; i < gameConfig.rows; i++) {
+        for (let j = 0; j < gameConfig.cols; j++) {
+          const cellIndex = i * gameConfig.cols + j;
+          const cell = cells[cellIndex];
+          const cellData = gameBoard[i][j];
+          
+          // 重置类名
+          cell.className = 'cell';
+          cell.textContent = '';
+          
+          if (cellData.isFlagged) {
+            cell.classList.add('flagged');
+            cell.textContent = '🚩';
+          } else if (cellData.isRevealed) {
+            cell.classList.add('revealed');
+            
+            if (cellData.isMine) {
+              cell.classList.add('mine');
+              cell.textContent = '💣';
+              if (gameEnded) {
+                cell.classList.add('exploded');
+              }
+            } else if (cellData.neighborMines > 0) {
+              cell.textContent = cellData.neighborMines;
+              cell.classList.add(`cell-${cellData.neighborMines}`);
+            }
+          }
+        }
+      }
+    }
+    
+    // 游戏结束
+    function gameOver() {
+      gameEnded = true;
+      
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      
+      // 显示所有地雷
+      for (let i = 0; i < gameConfig.rows; i++) {
+        for (let j = 0; j < gameConfig.cols; j++) {
+          if (gameBoard[i][j].isMine) {
+            gameBoard[i][j].isRevealed = true;
+          }
+        }
+      }
+      
+      updateDisplay();
+      
+      setTimeout(() => {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        document.getElementById('finalTime').textContent = elapsed;
+        document.getElementById('gameOver').style.display = 'flex';
+      }, 1000);
+    }
+    
+    // 检查胜利
+    function checkWin() {
+      const totalNonMines = totalCells - gameConfig.mines;
+      
+      if (revealedCells === totalNonMines) {
+        gameEnded = true;
+        
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        const isNewRecord = saveBestTime(elapsed);
+        
+        setTimeout(() => {
+          document.getElementById('winTime').textContent = elapsed;
+          if (isNewRecord) {
+            document.getElementById('newRecord').style.display = 'block';
+          }
+          document.getElementById('gameWin').style.display = 'flex';
+        }, 500);
+      }
+    }
+    
+    // 页面加载完成后初始化游戏
+    window.addEventListener('load', init);
+    
+    // 处理屏幕旋转
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        if (!gameEnded) {
+          renderBoard();
+        }
+      }, 100);
+    });
+    
+    // 处理窗口大小变化
+    window.addEventListener('resize', () => {
+      if (!gameEnded) {
+        renderBoard();
+      }
+    });
+  </script>
+</body>
+</html>

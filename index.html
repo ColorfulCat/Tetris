@@ -43,15 +43,23 @@
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 10px;
-      animation: float 15s infinite linear;
+      animation: floatUp 15s infinite linear;
     }
     
-    @keyframes float {
+    @keyframes floatUp {
       0% {
-        transform: translateY(0) rotate(0deg);
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
       }
       100% {
-        transform: translateY(-100vh) rotate(360deg);
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
       }
     }
     
@@ -189,6 +197,10 @@
     
     .schulte-icon {
       background: linear-gradient(135deg, #9C27B0, #E91E63);
+    }
+    
+    .minesweeper-icon {
+      background: linear-gradient(135deg, #FF6B6B, #EE5A24);
     }
     
     .game-title {
@@ -340,11 +352,8 @@
   
   <div class="container">
     <div class="header">
-      <h1 class="title">HTML5 小游戏集合</h1>
+      <h1 class="title">经典小游戏集合</h1>
       <p class="subtitle">精选经典小游戏，随时随地畅玩</p>
-      <p class="description">
-        包含俄罗斯方块、贪食蛇、数独、2048、舒尔特方格等经典游戏，支持移动端触控操作，无需下载即可游玩
-      </p>
     </div>
     
     <div class="games-grid">
@@ -382,6 +391,13 @@
         <p class="game-description">按顺序点击数字，训练注意力和反应速度的经典游戏</p>
         <a href="schulte.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
       </div>
+      
+      <div class="game-card" onclick="openGame('minesweeper.html')">
+        <div class="game-icon minesweeper-icon">💣</div>
+        <h3 class="game-title">扫雷</h3>
+        <p class="game-description">经典的扫雷游戏，通过数字提示找出所有地雷位置</p>
+        <a href="minesweeper.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
+      </div>
     </div>
     
     <div class="footer">
@@ -393,18 +409,30 @@
     // 背景动画
     function createFloatingShapes() {
       const background = document.getElementById('background');
-      const shapes = ['🧩', '🐍', '🔢', '🎯', '🎲', '⭐', '💎', '🎮', '🏆'];
+      const shapes = ['🧩', '🐍', '🔢', '🎯', '🎲', '💣', '⭐', '💎', '🎮', '🏆'];
       
       function createShape() {
         const shape = document.createElement('div');
         shape.className = 'shape';
         shape.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+        
+        // 设置初始位置在页面底部
         shape.style.left = Math.random() * 100 + '%';
-        shape.style.width = Math.random() * 30 + 20 + 'px';
-        shape.style.height = shape.style.width;
-        shape.style.fontSize = parseInt(shape.style.width) * 0.6 + 'px';
+        shape.style.bottom = '-50px'; // 从底部开始
+        
+        // 设置大小和字体
+        const size = Math.random() * 30 + 20;
+        shape.style.width = size + 'px';
+        shape.style.height = size + 'px';
+        shape.style.fontSize = size * 0.6 + 'px';
+        
+        // 设置动画时间和延迟
         shape.style.animationDuration = (Math.random() * 10 + 10) + 's';
         shape.style.animationDelay = Math.random() * 5 + 's';
+        
+        // 添加随机的水平漂移
+        const drift = (Math.random() - 0.5) * 100; // -50px 到 50px 的漂移
+        shape.style.setProperty('--drift', drift + 'px');
         
         background.appendChild(shape);
         
@@ -417,12 +445,12 @@
       }
       
       // 初始创建一些形状
-      for (let i = 0; i < 8; i++) {
-        setTimeout(createShape, i * 2000);
+      for (let i = 0; i < 10; i++) {
+        setTimeout(createShape, i * 1000);
       }
       
       // 持续创建新形状
-      setInterval(createShape, 3000);
+      setInterval(createShape, 2000);
     }
     
     // 游戏卡片点击效果
@@ -461,12 +489,33 @@
       }, 200);
     }
     
-    // 添加涟漪动画样式
+    // 添加涟漪动画样式和优化的浮动动画
     const style = document.createElement('style');
     style.textContent = `
       @keyframes ripple {
         to {
           transform: scale(4);
+          opacity: 0;
+        }
+      }
+      
+      .shape {
+        animation: floatUpWithDrift 15s infinite linear;
+      }
+      
+      @keyframes floatUpWithDrift {
+        0% {
+          transform: translateY(calc(100vh + 50px)) translateX(0) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100px) translateX(var(--drift, 0px)) rotate(360deg);
           opacity: 0;
         }
       }
