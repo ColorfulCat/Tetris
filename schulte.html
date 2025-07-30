@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>舒尔特方格</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+      position: relative;
+      padding: 20px;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    
+    .title {
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stats-section {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .stat-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 15px 25px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      min-width: 120px;
+    }
+    
+    .stat-title {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .game-board {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      position: relative;
+    }
+    
+    #schulteGrid {
+      background: rgba(187, 173, 160, 0.4);
+      border-radius: 8px;
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 8px;
+      padding: 15px;
+      width: 400px;
+      height: 400px;
+      transition: all 0.3s ease;
+    }
+    
+    .grid-cell {
+      background: rgba(238, 228, 218, 0.9);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #776e65;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .grid-cell:hover {
+      background: rgba(238, 228, 218, 1);
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .grid-cell.correct {
+      background: linear-gradient(135deg, #50C878, #32CD32);
+      color: white;
+      animation: correctPulse 0.3s ease;
+    }
+    
+    .grid-cell.wrong {
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      color: white;
+      animation: wrongShake 0.5s ease;
+    }
+    
+    .grid-cell.next {
+      border-color: #FFD700;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+      animation: nextGlow 1.5s ease-in-out infinite alternate;
+    }
+    
+    @keyframes correctPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes wrongShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    @keyframes nextGlow {
+      0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+      100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8); }
+    }
+    
+    .new-game-btn {
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .new-game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .new-game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .new-game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .new-game-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    
+    .game-complete {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+    }
+    
+    .game-complete h2 {
+      font-size: 48px;
+      color: #50C878;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+    }
+    
+    .final-time {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+    
+    .record-info {
+      font-size: 18px;
+      color: #FFD700;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .restart-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #50C878, #32CD32);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(80, 200, 120, 0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .restart-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(80, 200, 120, 0.6);
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+      .game-container {
+        padding: 0 10px;
+        gap: 15px;
+      }
+      
+      .title {
+        font-size: 28px;
+      }
+      
+      .stats-section {
+        gap: 20px;
+      }
+      
+      .stat-box {
+        padding: 12px 20px;
+        min-width: 100px;
+      }
+      
+      .stat-title {
+        font-size: 10px;
+      }
+      
+      .stat-value {
+        font-size: 20px;
+      }
+      
+      #schulteGrid {
+        width: 375px;
+        height: 375px;
+      }
+      
+      .grid-cell {
+        font-size: 24px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .title {
+        font-size: 24px;
+      }
+      
+      #schulteGrid {
+        width: 375px;
+        height: 375px;
+      }
+      
+      .grid-cell {
+        font-size: 22px;
+      }
+      
+      .game-complete h2 {
+        font-size: 36px;
+      }
+      
+      .final-time {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <div class="header">
+      <h1 class="title">舒尔特方格</h1>
+    </div>
+    
+    <div class="stats-section">
+      <div class="stat-box">
+        <div class="stat-title">当前时间</div>
+        <div class="stat-value" id="currentTime">0.00</div>
+      </div>
+      
+      <div class="stat-box">
+        <div class="stat-title">最佳记录</div>
+        <div class="stat-value" id="bestTime">--</div>
+      </div>
+    </div>
+    
+    <div class="game-board">
+      <div id="schulteGrid">
+        <!-- 网格将通过JavaScript生成 -->
+      </div>
+    </div>
+    
+    <button class="new-game-btn" id="newGameBtn">开始游戏</button>
+  </div>
+  
+  <div class="game-complete" id="gameComplete">
+    <h2>恭喜完成！</h2>
+    <div class="final-time">用时: <span id="finalTime">0.00</span> 秒</div>
+    <div class="record-info" id="recordInfo"></div>
+    <button class="restart-btn" id="restartBtn">再来一次</button>
+  </div>
+
+  <script>
+    // 游戏状态
+    let gameState = {
+      isPlaying: false,
+      startTime: null,
+      currentTime: 0,
+      currentNumber: 1,
+      grid: [],
+      timer: null
+    };
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      loadBestTime();
+      setupEventListeners();
+      updateBestTimeDisplay();
+      generateGrid();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const shapes = ['🔢', '🎯', '⭐', '💎', '🏆', '🎮', '✨', '🌟'];
+      
+      for (let i = 0; i < 15; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        shape.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+        
+        const size = Math.random() * 60 + 30;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        shape.style.fontSize = `${size * 0.6}px`;
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        shape.style.animationDuration = `${Math.random() * 20 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 游戏按钮
+      document.getElementById('newGameBtn').addEventListener('click', startGame);
+      document.getElementById('restartBtn').addEventListener('click', () => {
+        document.getElementById('gameComplete').style.display = 'none';
+        generateGrid();
+      });
+    }
+    
+    // 生成网格
+    function generateGrid() {
+      const grid = document.getElementById('schulteGrid');
+      grid.innerHTML = '';
+      
+      // 生成数字数组 1-9
+      const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      
+      // 打乱数组
+      for (let i = numbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+      }
+      
+      // 创建网格单元格
+      gameState.grid = [];
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.textContent = numbers[i];
+        cell.dataset.number = numbers[i];
+        
+        cell.addEventListener('click', () => handleCellClick(parseInt(cell.dataset.number)));
+        
+        grid.appendChild(cell);
+        gameState.grid.push(cell);
+      }
+      
+      // 重置游戏状态
+      gameState.currentNumber = 1;
+      updateCurrentTime(0);
+    }
+    
+    // 开始游戏
+    function startGame() {
+      if (gameState.isPlaying) {
+        stopGame();
+      }
+      
+      gameState.isPlaying = true;
+      gameState.startTime = Date.now();
+      gameState.currentTime = 0;
+      
+      document.getElementById('newGameBtn').textContent = '重新开始';
+      document.getElementById('gameComplete').style.display = 'none';
+      
+      // 重新生成网格
+      generateGrid();
+      
+      // 开始计时
+      gameState.timer = setInterval(() => {
+        gameState.currentTime = (Date.now() - gameState.startTime) / 1000;
+        updateCurrentTime(gameState.currentTime);
+      }, 10);
+      
+      // 高亮下一个数字
+      highlightNextNumber();
+    }
+    
+    // 停止游戏
+    function stopGame() {
+      gameState.isPlaying = false;
+      if (gameState.timer) {
+        clearInterval(gameState.timer);
+        gameState.timer = null;
+      }
+      document.getElementById('newGameBtn').textContent = '开始游戏';
+      
+      // 清除所有高亮
+      gameState.grid.forEach(cell => {
+        cell.classList.remove('next', 'correct', 'wrong');
+      });
+    }
+    
+    // 处理单元格点击
+    function handleCellClick(number) {
+      if (!gameState.isPlaying) return;
+      
+      const cell = gameState.grid.find(c => parseInt(c.dataset.number) === number);
+      
+      if (number === gameState.currentNumber) {
+        // 正确
+        cell.classList.remove('next');
+        cell.classList.add('correct');
+        
+        // 更新下一个数字
+        gameState.currentNumber++;
+        
+        // 检查是否完成
+        if (gameState.currentNumber > 9) {
+          completeGame();
+        } else {
+          highlightNextNumber();
+        }
+      } else {
+        // 错误
+        cell.classList.add('wrong');
+        setTimeout(() => {
+          cell.classList.remove('wrong');
+        }, 500);
+      }
+    }
+    
+    // 高亮下一个数字
+    function highlightNextNumber() {
+      // 清除之前的高亮
+      gameState.grid.forEach(cell => {
+        cell.classList.remove('next');
+      });
+      
+      // 高亮当前需要点击的数字
+      const nextCell = gameState.grid.find(cell => 
+        parseInt(cell.dataset.number) === gameState.currentNumber
+      );
+      if (nextCell) {
+        nextCell.classList.add('next');
+      }
+    }
+    
+    // 完成游戏
+    function completeGame() {
+      stopGame();
+      
+      const finalTime = gameState.currentTime;
+      const currentBest = getBestTime();
+      
+      let isNewRecord = false;
+      if (currentBest === null || finalTime < currentBest) {
+        setBestTime(finalTime);
+        isNewRecord = true;
+      }
+      
+      // 显示完成界面
+      document.getElementById('finalTime').textContent = finalTime.toFixed(2);
+      
+      const recordInfo = document.getElementById('recordInfo');
+      if (isNewRecord) {
+        recordInfo.textContent = '🎉 新纪录！';
+        recordInfo.style.color = '#FFD700';
+      } else {
+        recordInfo.textContent = `最佳记录: ${currentBest.toFixed(2)} 秒`;
+        recordInfo.style.color = '#a0a0a0';
+      }
+      
+      document.getElementById('gameComplete').style.display = 'flex';
+      updateBestTimeDisplay();
+    }
+    
+    // 更新当前时间显示
+    function updateCurrentTime(time) {
+      document.getElementById('currentTime').textContent = time.toFixed(2);
+    }
+    
+    // 更新最佳时间显示
+    function updateBestTimeDisplay() {
+      const bestTime = getBestTime();
+      
+      const display = document.getElementById('bestTime');
+      if (bestTime !== null) {
+        display.textContent = bestTime.toFixed(2);
+      } else {
+        display.textContent = '--';
+      }
+    }
+    
+    // 获取最佳时间
+    function getBestTime() {
+      const saved = localStorage.getItem('schulte-3x3-asc');
+      return saved ? parseFloat(saved) : null;
+    }
+    
+    // 设置最佳时间
+    function setBestTime(time) {
+      localStorage.setItem('schulte-3x3-asc', time.toString());
+    }
+    
+    // 加载最佳时间
+    function loadBestTime() {
+      updateBestTimeDisplay();
+    }
+    
+    // 初始化游戏
+    init();
+  </script>
+</body>
+</html>

@@ -110,7 +110,7 @@
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 30px;
       width: 100%;
-      max-width: 900px;
+      max-width: 1000px;
     }
     
     .game-card {
@@ -185,6 +185,10 @@
     
     .game2048-icon {
       background: linear-gradient(135deg, #FF9800, #FFC107);
+    }
+    
+    .schulte-icon {
+      background: linear-gradient(135deg, #9C27B0, #E91E63);
     }
     
     .game-title {
@@ -339,7 +343,7 @@
       <h1 class="title">HTML5 小游戏集合</h1>
       <p class="subtitle">精选经典小游戏，随时随地畅玩</p>
       <p class="description">
-        包含俄罗斯方块、贪食蛇、数独、2048等经典游戏，支持移动端触控操作，无需下载即可游玩
+        包含俄罗斯方块、贪食蛇、数独、2048、舒尔特方格等经典游戏，支持移动端触控操作，无需下载即可游玩
       </p>
     </div>
     
@@ -371,6 +375,13 @@
         <p class="game-description">滑动数字方块，合并相同数字，挑战2048</p>
         <a href="2048.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
       </div>
+      
+      <div class="game-card" onclick="openGame('schulte.html')">
+        <div class="game-icon schulte-icon">🎲</div>
+        <h3 class="game-title">舒尔特方格</h3>
+        <p class="game-description">按顺序点击数字，训练注意力和反应速度的经典游戏</p>
+        <a href="schulte.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
+      </div>
     </div>
     
     <div class="footer">
@@ -382,7 +393,7 @@
     // 背景动画
     function createFloatingShapes() {
       const background = document.getElementById('background');
-      const shapes = ['🧩', '🐍', '🔢', '🎯', '⭐', '💎', '🎮', '🏆'];
+      const shapes = ['🧩', '🐍', '🔢', '🎯', '🎲', '⭐', '💎', '🎮', '🏆'];
       
       function createShape() {
         const shape = document.createElement('div');
