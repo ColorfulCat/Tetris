@@ -207,6 +207,10 @@
       background: linear-gradient(135deg, #8B4513, #D2691E);
     }
     
+    .card-icon {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+    
     .game-title {
       font-size: 24px;
       font-weight: bold;
@@ -408,6 +412,13 @@
         <h3 class="game-title">五子棋</h3>
         <p class="game-description">经典的五子棋对弈游戏，与AI对战，考验你的策略思维</p>
         <a href="gomoku.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
+      </div>
+      
+      <div class="game-card" onclick="openGame('card.html')">
+        <div class="game-icon card-icon">🃏</div>
+        <h3 class="game-title">翻卡牌</h3>
+        <p class="game-description">记忆翻卡牌游戏，翻开相同的卡牌配对，锻炼记忆力</p>
+        <a href="card.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
       </div>
     </div>
     

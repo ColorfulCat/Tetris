@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>翻卡牌记忆游戏</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
+      padding: 20px;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .score-section {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .score-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 12px 20px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      min-width: 80px;
+    }
+    
+    .score-title {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .score-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .difficulty-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px;
+      border-radius: 25px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .difficulty-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .difficulty-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: 20px;
+      z-index: -1;
+    }
+    
+    .difficulty-btn:hover {
+      color: white;
+      transform: translateY(-1px);
+    }
+    
+    .difficulty-btn:hover::before {
+      opacity: 0.3;
+    }
+    
+    .difficulty-btn.active {
+      color: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+    }
+    
+    .difficulty-btn.active::before {
+      opacity: 1;
+    }
+    
+    .game-board {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      position: relative;
+      width: 100%;
+    }
+    
+    #cardGrid {
+      display: grid;
+      gap: 10px;
+      justify-content: center;
+      width: 100%;
+    }
+    
+    .card {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s ease;
+      min-height: 60px;
+    }
+    
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+    
+    .card.matched {
+      opacity: 0.7;
+      transform: scale(0.95);
+    }
+    
+    .card.matched .card-front {
+      background: linear-gradient(135deg, #888888 0%, #666666 100%);
+      color: #cccccc;
+    }
+    
+    .card.matched .card-back {
+      background: linear-gradient(135deg, #888888 0%, #666666 100%);
+      color: #cccccc;
+    }
+    
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 32px;
+      font-weight: bold;
+      backface-visibility: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-back {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .card-front {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      transform: rotateY(180deg);
+    }
+    
+    .new-game-btn {
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .new-game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .new-game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .new-game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .new-game-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    
+    .game-complete {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+    }
+    
+    .game-complete h2 {
+      font-size: 48px;
+      color: #50C878;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+    }
+    
+    .final-stats {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .restart-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #50C878, #32CD32);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(80, 200, 120, 0.4);
+      border: none;
+      cursor: pointer;
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .game-container {
+        padding: 10px;
+        gap: 15px;
+      }
+      
+      .score-section {
+        width: 100%;
+        gap: 8px;
+      }
+      
+      .score-box {
+        flex: 1;
+        padding: 10px 8px;
+        min-width: 0;
+      }
+      
+      .score-title {
+        font-size: 10px;
+      }
+      
+      .score-value {
+        font-size: 16px;
+      }
+      
+      .card-face {
+        font-size: 28px;
+      }
+      
+      .new-game-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+      }
+      
+      .difficulty-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+      
+      .difficulty-selector {
+        gap: 6px;
+        padding: 4px;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .card-face {
+        font-size: 24px;
+      }
+      
+      .card {
+        min-height: 50px;
+      }
+      
+      .score-box {
+        padding: 8px 6px;
+      }
+      
+      .score-title {
+        font-size: 9px;
+      }
+      
+      .score-value {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <!-- 难度选择 -->
+    <div class="difficulty-selector">
+      <button class="difficulty-btn active" data-level="easy">简单 4×4</button>
+      <button class="difficulty-btn" data-level="hard">困难 6×6</button>
+    </div>
+    
+    <!-- 游戏信息 -->
+    <div class="game-header">
+      <div class="score-section">
+        <div class="score-box">
+          <div class="score-title">翻牌</div>
+          <div class="score-value" id="moves">0</div>
+        </div>
+        
+        <div class="score-box">
+          <div class="score-title">时间</div>
+          <div class="score-value" id="timer">00:00</div>
+        </div>
+        
+        <div class="score-box">
+          <div class="score-title">配对</div>
+          <div class="score-value" id="matches">0</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 游戏面板 -->
+    <div class="game-board">
+      <div id="cardGrid"></div>
+    </div>
+    
+    <!-- 新游戏按钮 -->
+    <button class="new-game-btn" id="newGameBtn">新游戏</button>
+  </div>
+  
+  <!-- 游戏完成弹窗 -->
+  <div class="game-complete" id="gameComplete">
+    <h2>恭喜完成</h2>
+    <div class="final-stats">
+      <div>用时: <span id="finalTime">00:00</span></div>
+      <div>翻牌次数: <span id="finalMoves">0</span></div>
+      <div>配对数: <span id="finalMatches">0</span></div>
+    </div>
+    <button class="restart-btn" id="restartBtn">再来一局</button>
+  </div>
+
+  <script>
+    // 游戏状态
+    let gameBoard = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let startTime = null;
+    let timerInterval = null;
+    let gameActive = false;
+    let currentDifficulty = 'easy';
+    
+    // 难度配置
+    const difficulties = {
+      easy: { rows: 4, cols: 4, pairs: 8 },
+      hard: { rows: 6, cols: 6, pairs: 18 }
+    };
+    
+    // 卡牌符号
+    const cardSymbols = [
+      '🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎸', '🎺',
+      '🚀', '⭐', '🌟', '💎', '🔥', '⚡', '🌈', '🎊',
+      '🦄', '🐱', '🐶', '🐼', '🦊', '🐸', '🐙', '🦋',
+      '🍎', '🍊', '🍋', '🍇', '🍓', '🥝', '🍑', '🍒',
+      '⚽', '🏀', '🎾', '🏐', '🏈', '⚾', '🎱', '🏓'
+    ];
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      setupEventListeners();
+      newGame();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      document.getElementById('newGameBtn').addEventListener('click', newGame);
+      document.getElementById('restartBtn').addEventListener('click', newGame);
+      
+      // 难度选择
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          currentDifficulty = e.target.dataset.level;
+          newGame();
+        });
+      });
+    }
+    
+    // 新游戏
+    function newGame() {
+      // 重置游戏状态
+      gameBoard = [];
+      flippedCards = [];
+      matchedPairs = 0;
+      moves = 0;
+      gameActive = false;
+      
+      // 清除计时器
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      startTime = null;
+      
+      // 更新显示
+      document.getElementById('moves').textContent = '0';
+      document.getElementById('timer').textContent = '00:00';
+      document.getElementById('matches').textContent = '0';
+      document.getElementById('gameComplete').style.display = 'none';
+      
+      // 创建游戏板
+      createGameBoard();
+    }
+    
+    // 创建游戏板
+    function createGameBoard() {
+      const config = difficulties[currentDifficulty];
+      const cardGrid = document.getElementById('cardGrid');
+      
+      // 设置网格样式
+      cardGrid.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+      cardGrid.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
+      
+      // 清空现有卡牌
+      cardGrid.innerHTML = '';
+      
+      // 创建卡牌数据
+      const symbols = cardSymbols.slice(0, config.pairs);
+      const cardData = [...symbols, ...symbols]; // 每个符号两张牌
+      
+      // 洗牌
+      for (let i = cardData.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cardData[i], cardData[j]] = [cardData[j], cardData[i]];
+      }
+      
+      // 创建卡牌元素
+      cardData.forEach((symbol, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.symbol = symbol;
+        card.dataset.index = index;
+        
+        card.innerHTML = `
+          <div class="card-face card-back">?</div>
+          <div class="card-face card-front">${symbol}</div>
+        `;
+        
+        card.addEventListener('click', () => flipCard(card));
+        cardGrid.appendChild(card);
+        gameBoard.push(card);
+      });
+    }
+    
+    // 翻牌
+    function flipCard(card) {
+      // 检查是否可以翻牌
+      if (!gameActive && moves === 0) {
+        startGame();
+      }
+      
+      if (card.classList.contains('flipped') || 
+          card.classList.contains('matched') || 
+          flippedCards.length >= 2) {
+        return;
+      }
+      
+      // 翻牌
+      card.classList.add('flipped');
+      flippedCards.push(card);
+      
+      // 增加翻牌次数
+      moves++;
+      document.getElementById('moves').textContent = moves;
+      
+      // 检查配对
+      if (flippedCards.length === 2) {
+        setTimeout(checkMatch, 600);
+      }
+    }
+    
+    // 开始游戏
+    function startGame() {
+      gameActive = true;
+      startTime = Date.now();
+      
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('timer').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+    
+    // 检查配对
+    function checkMatch() {
+      const [card1, card2] = flippedCards;
+      
+      if (card1.dataset.symbol === card2.dataset.symbol) {
+        // 配对成功
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        
+        // 移除问号，显示emoji
+        const card1Back = card1.querySelector('.card-back');
+        const card2Back = card2.querySelector('.card-back');
+        card1Back.textContent = card1.dataset.symbol;
+        card2Back.textContent = card2.dataset.symbol;
+        
+        matchedPairs++;
+        document.getElementById('matches').textContent = matchedPairs;
+        
+        // 检查游戏是否完成
+        const config = difficulties[currentDifficulty];
+        if (matchedPairs === config.pairs) {
+          setTimeout(gameComplete, 500);
+        }
+      } else {
+        // 配对失败，翻回去
+        setTimeout(() => {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+        }, 500);
+      }
+      
+      flippedCards = [];
+    }
+    
+    // 游戏完成
+    function gameComplete() {
+      gameActive = false;
+      
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      
+      const finalTime = document.getElementById('timer').textContent;
+      document.getElementById('finalTime').textContent = finalTime;
+      document.getElementById('finalMoves').textContent = moves;
+      document.getElementById('finalMatches').textContent = matchedPairs;
+      
+      document.getElementById('gameComplete').style.display = 'flex';
+    }
+    
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
