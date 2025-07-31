@@ -203,6 +203,10 @@
       background: linear-gradient(135deg, #FF6B6B, #EE5A24);
     }
     
+    .gomoku-icon {
+      background: linear-gradient(135deg, #8B4513, #D2691E);
+    }
+    
     .game-title {
       font-size: 24px;
       font-weight: bold;
@@ -397,6 +401,13 @@
         <h3 class="game-title">扫雷</h3>
         <p class="game-description">经典的扫雷游戏，通过数字提示找出所有地雷位置</p>
         <a href="minesweeper.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
+      </div>
+      
+      <div class="game-card" onclick="openGame('gomoku.html')">
+        <div class="game-icon gomoku-icon">⚫</div>
+        <h3 class="game-title">五子棋</h3>
+        <p class="game-description">经典的五子棋对弈游戏，与AI对战，考验你的策略思维</p>
+        <a href="gomoku.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
       </div>
     </div>
     
