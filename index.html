@@ -211,6 +211,10 @@
       background: linear-gradient(135deg, #667eea, #764ba2);
     }
     
+    .reversi-icon {
+      background: linear-gradient(135deg, #2C3E50, #34495E);
+    }
+    
     .game-title {
       font-size: 24px;
       font-weight: bold;
@@ -420,6 +424,13 @@
         <p class="game-description">记忆翻卡牌游戏，翻开相同的卡牌配对，锻炼记忆力</p>
         <a href="card.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
       </div>
+      
+      <div class="game-card" onclick="openGame('reversi.html')">
+        <div class="game-icon reversi-icon">⚪</div>
+        <h3 class="game-title">黑白棋</h3>
+        <p class="game-description">经典的黑白棋对弈游戏，与AI对战，考验你的策略布局能力</p>
+        <a href="reversi.html" class="play-btn" onclick="event.stopPropagation()">开始游戏</a>
+      </div>
     </div>
     
     <div class="footer">
@@ -431,7 +442,7 @@
     // 背景动画
     function createFloatingShapes() {
       const background = document.getElementById('background');
-      const shapes = ['🧩', '🐍', '🔢', '🎯', '🎲', '💣', '⭐', '💎', '🎮', '🏆'];
+      const shapes = ['🧩', '🐍', '🔢', '🎯', '🎲', '💣', '⚫', '⚪', '🃏', '⭐', '💎', '🎮', '🏆'];
       
       function createShape() {
         const shape = document.createElement('div');
