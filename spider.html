@@ -197,6 +197,7 @@
       position: relative;
       padding: 5px;
       transition: all 0.3s ease;
+      cursor: pointer;
     }
     
     .column.drop-zone {
@@ -696,6 +697,16 @@
         document.getElementById(`stock-${i}`).addEventListener('click', () => dealCards(i));
       }
       
+      // 列点击事件
+      document.querySelectorAll('.column').forEach(column => {
+        column.addEventListener('click', (e) => {
+          if (e.target === column) { // 点击空白区域
+            const col = parseInt(column.dataset.column);
+            handleColumnClick(col);
+          }
+        });
+      });
+      
       // 触摸事件
       document.addEventListener('touchstart', handleTouchStart, { passive: false });
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -739,6 +750,7 @@
       };
       
       document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('undoBtn').disabled = true;
       
       // 创建牌组
       const deck = createDeck();
@@ -799,11 +811,16 @@
         }
       }
       
-      // 剩余的牌放入发牌堆
+      // 剩余的牌放入发牌堆，每堆10张
       let stockIndex = 0;
       while (cardIndex < deck.length) {
+        if (!gameState.stock[stockIndex]) {
+          gameState.stock[stockIndex] = [];
+        }
         gameState.stock[stockIndex].push(deck[cardIndex++]);
-        if (cardIndex % 10 === 0) {
+        
+        // 每10张牌换一堆
+        if (gameState.stock[stockIndex].length === 10) {
           stockIndex++;
         }
       }
@@ -849,7 +866,7 @@
     function renderStock() {
       for (let i = 0; i < 5; i++) {
         const stockPile = document.getElementById(`stock-${i}`);
-        if (gameState.stock[i].length > 0) {
+        if (gameState.stock[i] && gameState.stock[i].length > 0) {
           stockPile.textContent = gameState.stock[i].length;
           stockPile.classList.remove('empty');
         } else {
@@ -889,6 +906,17 @@
       return cardElement;
     }
     
+    // 处理列点击
+    function handleColumnClick(col) {
+      if (gameState.selectedCards.length > 0) {
+        // 尝试移动选中的牌到空列
+        if (canMoveCards(gameState.selectedCards, col)) {
+          moveCards(gameState.selectedCards, col);
+        }
+        clearSelection();
+      }
+    }
+    
     // 处理卡牌点击
     function handleCardClick(e, card, col, index) {
       e.stopPropagation();
@@ -910,19 +938,19 @@
     // 检查是否可以选择卡牌
     function canSelectCard(col, index) {
       const cards = gameState.tableau[col];
-      if (index !== cards.length - 1) {
-        // 检查从这张牌开始是否形成递减序列
-        for (let i = index; i < cards.length - 1; i++) {
-          const current = cards[i];
-          const next = cards[i + 1];
-          if (!current.faceUp || !next.faceUp || 
-              current.value !== next.value + 1 || 
-              current.suit !== next.suit) {
-            return false;
-          }
+      if (index >= cards.length || !cards[index].faceUp) return false;
+      
+      // 检查从这张牌开始是否形成递减序列（蜘蛛纸牌规则：只能移动同花色的递减序列）
+      for (let i = index; i < cards.length - 1; i++) {
+        const current = cards[i];
+        const next = cards[i + 1];
+        if (!current.faceUp || !next.faceUp || 
+            current.value !== next.value + 1 || 
+            current.suit !== next.suit) {
+          return false;
         }
       }
-      return cards[index].faceUp;
+      return true;
     }
     
     // 选择卡牌
@@ -1041,6 +1069,15 @@
           gameState.completed++;
           gameState.score += 100; // 完成序列得分
           
+          // 翻开新的最后一张牌
+          if (cards.length > 0) {
+            const newLastCard = cards[cards.length - 1];
+            if (!newLastCard.faceUp) {
+              newLastCard.faceUp = true;
+              gameState.score += 5;
+            }
+          }
+          
           // 添加动画效果
           setTimeout(() => {
             const foundationElement = document.getElementById(`foundation-${i}`);
@@ -1057,7 +1094,7 @@
     
     // 发牌
     function dealCards(stockIndex) {
-      if (gameState.stock[stockIndex].length === 0) return;
+      if (!gameState.stock[stockIndex] || gameState.stock[stockIndex].length === 0) return;
       if (gameState.selectedCards.length > 0) {
         clearSelection();
         return;
@@ -1200,13 +1237,21 @@
         });
         
         // 检查拖拽目标
-        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
         document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-zone'));
         
-        if (elementBelow && elementBelow.classList.contains('column')) {
-          const targetCol = parseInt(elementBelow.dataset.column);
+        // 获取触摸点下的元素
+        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        let targetColumn = null;
+        
+        if (elementBelow) {
+          // 查找最近的列元素
+          targetColumn = elementBelow.closest('.column');
+        }
+        
+        if (targetColumn) {
+          const targetCol = parseInt(targetColumn.dataset.column);
           if (canMoveCards(gameState.selectedCards, targetCol)) {
-            elementBelow.classList.add('drop-zone');
+            targetColumn.classList.add('drop-zone');
           }
         }
       }
@@ -1217,7 +1262,6 @@
         e.preventDefault();
         
         const touch = e.changedTouches[0];
-        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
         
         // 重置卡牌位置
         gameState.selectedCards.forEach(selectedCard => {
@@ -1228,9 +1272,17 @@
           }
         });
         
+        // 获取触摸结束点下的元素
+        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        let targetColumn = null;
+        
+        if (elementBelow) {
+          targetColumn = elementBelow.closest('.column');
+        }
+        
         // 检查是否可以放置
-        if (elementBelow && elementBelow.classList.contains('column')) {
-          const targetCol = parseInt(elementBelow.dataset.column);
+        if (targetColumn) {
+          const targetCol = parseInt(targetColumn.dataset.column);
           if (canMoveCards(gameState.selectedCards, targetCol)) {
             moveCards(gameState.selectedCards, targetCol);
           }
