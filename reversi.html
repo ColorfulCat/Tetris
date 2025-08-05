@@ -201,6 +201,41 @@
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
+      margin-bottom: 15px;
+      width: 100%;
+    }
+    
+    .difficulty-selector {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 8px;
+      display: flex;
+      gap: 5px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+    
+    .difficulty-btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      font-size: 14px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      min-width: 60px;
+    }
+    
+    .difficulty-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+    
+    .difficulty-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
     
     .new-game-btn {
@@ -455,6 +490,18 @@
       
       .controls {
         gap: 10px;
+        margin-bottom: 10px;
+      }
+      
+      .difficulty-selector {
+        padding: 6px;
+        gap: 3px;
+      }
+      
+      .difficulty-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        min-width: 50px;
       }
       
       .new-game-btn {
@@ -495,6 +542,16 @@
   <div class="background" id="background"></div>
   
   <div class="game-container">
+    <!-- 控制按钮区域 -->
+    <div class="controls">
+      <div class="difficulty-selector">
+        <button class="difficulty-btn" data-difficulty="1">简单</button>
+        <button class="difficulty-btn" data-difficulty="2">中等</button>
+        <button class="difficulty-btn active" data-difficulty="3">困难</button>
+      </div>
+      <button class="new-game-btn" id="newGameBtn">新游戏</button>
+    </div>
+    
     <!-- 分数和当前玩家区域 -->
     <div class="score-section">
       <div class="score-box">
@@ -516,11 +573,6 @@
     <!-- 游戏面板 -->
     <div class="game-board">
       <div id="reversiBoard"></div>
-    </div>
-    
-    <!-- 控制按钮 -->
-    <div class="controls">
-      <button class="new-game-btn" id="newGameBtn">新游戏</button>
     </div>
   </div>
   
@@ -597,6 +649,14 @@
         startNewGame();
       });
       document.getElementById('cancelBtn').addEventListener('click', hideConfirmDialog);
+      
+      // 难度选择按钮事件
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const newDifficulty = parseInt(e.target.dataset.difficulty);
+          setDifficulty(newDifficulty);
+        });
+      });
     }
     
     // 显示新游戏确认对话框
@@ -611,6 +671,19 @@
     // 隐藏确认对话框
     function hideConfirmDialog() {
       document.getElementById('confirmDialog').style.display = 'none';
+    }
+    
+    // 设置难度
+    function setDifficulty(level) {
+      difficulty = level;
+      
+      // 更新按钮状态
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.dataset.difficulty) === level) {
+          btn.classList.add('active');
+        }
+      });
     }
     
     // 开始新游戏
@@ -813,7 +886,18 @@
           return;
         }
         
-        let bestMove = getMinimaxMove(validMoves, 4); // 困难模式
+        let bestMove;
+        
+        if (difficulty === 1) {
+          // 简单模式：随机选择
+          bestMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        } else if (difficulty === 2) {
+          // 中等模式：使用较浅的搜索深度
+          bestMove = getMinimaxMove(validMoves, 2);
+        } else {
+          // 困难模式：使用较深的搜索深度
+          bestMove = getMinimaxMove(validMoves, 4);
+        }
         
         if (bestMove) {
           makeMove(bestMove[0], bestMove[1], currentPlayer);

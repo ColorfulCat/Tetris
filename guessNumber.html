@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>猜数字游戏</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
+      padding: 20px;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(45deg, #fff, #f0f0f0, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .stats-section {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .stat-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 15px 20px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      min-width: 100px;
+      flex: 1;
+      max-width: 150px;
+    }
+    
+    .stat-title {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .game-board {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    .range-display {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #f0f0f0;
+      font-weight: bold;
+    }
+    
+    .hint-display {
+      font-size: 18px;
+      margin-bottom: 25px;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      color: #fff;
+    }
+    
+    .input-section {
+      margin-bottom: 25px;
+    }
+    
+    .number-input {
+      width: 100%;
+      max-width: 200px;
+      padding: 15px 20px;
+      font-size: 24px;
+      text-align: center;
+      border: none;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      margin-bottom: 15px;
+    }
+    
+    .number-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+      transform: scale(1.05);
+      transition: all 0.3s ease;
+    }
+    
+    .guess-btn {
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 100%;
+      max-width: 200px;
+      margin-bottom: 15px;
+    }
+    
+    .guess-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .guess-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .guess-btn:hover::before {
+      left: 100%;
+    }
+    
+    .guess-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    
+    .guess-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .new-game-btn {
+      padding: 15px 40px;
+      background: linear-gradient(to right, #ff416c, #ff4b2b);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .new-game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .new-game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(255, 75, 43, 0.6);
+    }
+    
+    .new-game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .history-section {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 15px;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .history-title {
+      font-size: 16px;
+      color: #a0a0a0;
+      margin-bottom: 15px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .history-guess {
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .history-hint {
+      color: #a0a0a0;
+      font-size: 12px;
+    }
+    
+    .game-win {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+      padding: 20px;
+    }
+    
+    .game-win h2 {
+      font-size: 48px;
+      color: #50C878;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+      text-align: center;
+    }
+    
+    .win-stats {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    
+    .restart-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #50C878, #32CD32);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(80, 200, 120, 0.4);
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .title {
+        font-size: 36px;
+      }
+      
+      .stats-section {
+        gap: 10px;
+      }
+      
+      .stat-box {
+        min-width: 80px;
+        padding: 12px 15px;
+      }
+      
+      .stat-value {
+        font-size: 20px;
+      }
+      
+      .game-board {
+        padding: 20px;
+      }
+      
+      .range-display {
+        font-size: 20px;
+      }
+      
+      .hint-display {
+        font-size: 16px;
+        min-height: 40px;
+        padding: 12px;
+      }
+      
+      .number-input {
+        font-size: 20px;
+        padding: 12px 15px;
+      }
+      
+      .game-win h2 {
+        font-size: 36px;
+      }
+      
+      .win-stats {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <!-- 游戏标题 -->
+    <h1 class="title">猜数字</h1>
+    
+    <!-- 统计信息 -->
+    <div class="stats-section">
+      <div class="stat-box">
+        <div class="stat-title">当前次数</div>
+        <div class="stat-value" id="currentGuesses">0</div>
+      </div>
+      
+      <div class="stat-box">
+        <div class="stat-title">最佳记录</div>
+        <div class="stat-value" id="bestRecord">-</div>
+      </div>
+      
+      <div class="stat-box">
+        <div class="stat-title">游戏次数</div>
+        <div class="stat-value" id="totalGames">0</div>
+      </div>
+    </div>
+    
+    <!-- 游戏面板 -->
+    <div class="game-board">
+      <div class="range-display" id="rangeDisplay">请猜一个 1 到 100 之间的数字</div>
+      
+      <div class="hint-display" id="hintDisplay">开始你的第一次猜测吧！</div>
+      
+      <div class="input-section">
+        <input type="number" class="number-input" id="numberInput" placeholder="输入数字" min="1" max="100">
+        <br>
+        <button class="guess-btn" id="guessBtn">猜测</button>
+      </div>
+    </div>
+    
+    <!-- 猜测历史 -->
+    <div class="history-section" id="historySection" style="display: none;">
+      <div class="history-title">猜测历史</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+    
+    <!-- 新游戏按钮 -->
+    <button class="new-game-btn" id="newGameBtn">新游戏</button>
+  </div>
+  
+  <!-- 胜利弹窗 -->
+  <div class="game-win" id="gameWin">
+    <h2>🎉 恭喜你猜对了！</h2>
+    <div class="win-stats" id="winStats">
+      目标数字：<span id="winTarget">0</span><br>
+      猜测次数：<span id="winGuesses">0</span> 次
+    </div>
+    <button class="restart-btn" id="restartBtn">再来一局</button>
+  </div>
+
+  <script>
+    // 游戏状态
+    let targetNumber = 0;
+    let currentGuesses = 0;
+    let bestRecord = localStorage.getItem('guessNumberBest') || null;
+    let totalGames = parseInt(localStorage.getItem('guessNumberTotal')) || 0;
+    let gameHistory = [];
+    let minRange = 1;
+    let maxRange = 100;
+    
+    // DOM 元素
+    const numberInput = document.getElementById('numberInput');
+    const guessBtn = document.getElementById('guessBtn');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const hintDisplay = document.getElementById('hintDisplay');
+    const rangeDisplay = document.getElementById('rangeDisplay');
+    const currentGuessesDisplay = document.getElementById('currentGuesses');
+    const bestRecordDisplay = document.getElementById('bestRecord');
+    const totalGamesDisplay = document.getElementById('totalGames');
+    const historySection = document.getElementById('historySection');
+    const historyList = document.getElementById('historyList');
+    const gameWin = document.getElementById('gameWin');
+    const winTarget = document.getElementById('winTarget');
+    const winGuesses = document.getElementById('winGuesses');
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      setupEventListeners();
+      updateStats();
+      newGame();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        // 随机大小
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        
+        // 随机位置
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        
+        // 随机颜色
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // 随机动画
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      guessBtn.addEventListener('click', makeGuess);
+      newGameBtn.addEventListener('click', newGame);
+      restartBtn.addEventListener('click', newGame);
+      
+      // 输入框事件
+      numberInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+          makeGuess();
+        }
+      });
+      
+      numberInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value < minRange || value > maxRange) {
+          this.style.borderColor = '#ff4d4d';
+        } else {
+          this.style.borderColor = 'transparent';
+        }
+      });
+    }
+    
+    // 新游戏
+    function newGame() {
+      targetNumber = Math.floor(Math.random() * 100) + 1;
+      currentGuesses = 0;
+      gameHistory = [];
+      minRange = 1;
+      maxRange = 100;
+      
+      // 重置UI
+      numberInput.value = '';
+      numberInput.disabled = false;
+      guessBtn.disabled = false;
+      hintDisplay.textContent = '开始你的第一次猜测吧！';
+      rangeDisplay.textContent = '请猜一个 1 到 100 之间的数字';
+      historySection.style.display = 'none';
+      gameWin.style.display = 'none';
+      
+      updateStats();
+      numberInput.focus();
+      
+      console.log('目标数字：', targetNumber); // 调试用，实际游戏中应该删除
+    }
+    
+    // 进行猜测
+    function makeGuess() {
+      const guess = parseInt(numberInput.value);
+      
+      // 验证输入
+      if (isNaN(guess) || guess < 1 || guess > 100) {
+        hintDisplay.textContent = '请输入 1 到 100 之间的有效数字！';
+        hintDisplay.style.color = '#ff4d4d';
+        return;
+      }
+      
+      if (guess < minRange || guess > maxRange) {
+        hintDisplay.textContent = `请输入 ${minRange} 到 ${maxRange} 之间的数字！`;
+        hintDisplay.style.color = '#ff4d4d';
+        return;
+      }
+      
+      currentGuesses++;
+      let hint = '';
+      let hintColor = '#fff';
+      
+      if (guess === targetNumber) {
+        // 猜对了
+        hint = `🎉 恭喜！你用 ${currentGuesses} 次猜对了！`;
+        hintColor = '#50C878';
+        endGame(true);
+      } else if (guess < targetNumber) {
+        // 猜小了
+        hint = '太小了！试试更大的数字';
+        hintColor = '#4da6ff';
+        minRange = Math.max(minRange, guess + 1);
+      } else {
+        // 猜大了
+        hint = '太大了！试试更小的数字';
+        hintColor = '#ff6b6b';
+        maxRange = Math.min(maxRange, guess - 1);
+      }
+      
+      // 更新提示
+      hintDisplay.textContent = hint;
+      hintDisplay.style.color = hintColor;
+      
+      // 更新范围显示
+      if (guess !== targetNumber) {
+        rangeDisplay.textContent = `范围已缩小到 ${minRange} 到 ${maxRange}`;
+      }
+      
+      // 添加到历史记录
+      gameHistory.push({
+        guess: guess,
+        hint: guess === targetNumber ? '正确！' : (guess < targetNumber ? '太小' : '太大')
+      });
+      
+      updateHistory();
+      updateStats();
+      
+      // 清空输入框并聚焦
+      numberInput.value = '';
+      if (guess !== targetNumber) {
+        numberInput.focus();
+      }
+    }
+    
+    // 结束游戏
+    function endGame(won) {
+      if (won) {
+        // 更新统计
+        totalGames++;
+        if (bestRecord === null || currentGuesses < bestRecord) {
+          bestRecord = currentGuesses;
+          localStorage.setItem('guessNumberBest', bestRecord);
+        }
+        localStorage.setItem('guessNumberTotal', totalGames);
+        
+        // 显示胜利弹窗
+        winTarget.textContent = targetNumber;
+        winGuesses.textContent = currentGuesses;
+        gameWin.style.display = 'flex';
+        
+        // 禁用输入
+        numberInput.disabled = true;
+        guessBtn.disabled = true;
+        
+        updateStats();
+      }
+    }
+    
+    // 更新统计显示
+    function updateStats() {
+      currentGuessesDisplay.textContent = currentGuesses;
+      bestRecordDisplay.textContent = bestRecord || '-';
+      totalGamesDisplay.textContent = totalGames;
+    }
+    
+    // 更新历史记录显示
+    function updateHistory() {
+      if (gameHistory.length === 0) {
+        historySection.style.display = 'none';
+        return;
+      }
+      
+      historySection.style.display = 'block';
+      historyList.innerHTML = '';
+      
+      // 显示最近的10次猜测
+      const recentHistory = gameHistory.slice(-10).reverse();
+      
+      recentHistory.forEach((item, index) => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        historyItem.innerHTML = `
+          <span class="history-guess">${item.guess}</span>
+          <span class="history-hint">${item.hint}</span>
+        `;
+        
+        historyList.appendChild(historyItem);
+      });
+    }
+    
+    // 启动游戏
+    init();
+  </script>
+</body>
+</html>
