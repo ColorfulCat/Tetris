@@ -49,7 +49,16 @@
       font-size: 36px;
       font-weight: bold;
       text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      margin-bottom: 6px;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      text-align: center;
       margin-bottom: 10px;
+      font-weight: 300;
+      letter-spacing: 0.5px;
     }
     
     .difficulty-section {
@@ -171,12 +180,28 @@
       position: absolute;
       top: 0;
       left: 0;
+      /* 添加触摸反馈 */
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
     
     .number.moving {
       z-index: 100;
       transform: scale(1.1);
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* 点击效果 */
+    .number.pressed {
+      transform: scale(0.95);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      background: #f0f0f0;
+      transition: all 0.1s ease;
     }
     
     /* 抖动动画 */
@@ -193,6 +218,20 @@
       }
       75% {
         transform: translateX(3px);
+      }
+    }
+    
+    /* 移动设备优化 */
+    @media (hover: none) and (pointer: coarse) {
+      .grid-cell:hover {
+        background: rgba(238, 228, 218, 0.35);
+        transform: none;
+      }
+      
+      .number:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        background: #f0f0f0;
       }
     }
     
@@ -441,7 +480,8 @@
   
   <div class="game-container">
     <div class="header-section">
-      <h1 class="title">数字魔方</h1>
+      <h1 class="title">数字排序魔方</h1>
+      <p class="subtitle">请将方格中的数字按顺序从小到大排列</p>
       
       <div class="difficulty-section">
         <button class="difficulty-btn active" data-size="3">3×3</button>
@@ -500,6 +540,7 @@
     let bestMoves = {};
     let gameCompleted = false;
     let isAnimating = false;
+    let isShaking = false; // 新增：抖动状态标记
     
     // 初始化游戏
     function init() {
@@ -673,30 +714,99 @@
           
           // 添加点击事件（只有非边界位置才能点击）
           if (i < gridSize - 1 && j < gridSize - 1) {
-            cell.addEventListener('click', () => {
-              if (!gameCompleted && !isAnimating) {
+            // 添加触摸开始事件
+            const addPressEffect = () => {
+              if (!gameCompleted && !isAnimating && !isShaking) {
+                number.classList.add('pressed');
+              }
+            };
+            
+            // 添加触摸结束事件
+            const removePressEffect = () => {
+              number.classList.remove('pressed');
+            };
+            
+            // 点击事件
+            const handleClick = () => {
+              if (!gameCompleted && !isAnimating && !isShaking) {
                 rotateCounterClockwise(i, j, true);
               }
-            });
+            };
+            
+            // 桌面端事件
+            cell.addEventListener('mousedown', addPressEffect);
+            cell.addEventListener('mouseup', removePressEffect);
+            cell.addEventListener('mouseleave', removePressEffect);
+            cell.addEventListener('click', handleClick);
+            
+            // 移动端触摸事件
+            cell.addEventListener('touchstart', (e) => {
+              e.preventDefault();
+              addPressEffect();
+            }, { passive: false });
+            
+            cell.addEventListener('touchend', (e) => {
+              e.preventDefault();
+              removePressEffect();
+              handleClick();
+            }, { passive: false });
+            
+            cell.addEventListener('touchcancel', removePressEffect);
+            
           } else {
             // 为边界位置添加抖动效果
-            cell.addEventListener('click', () => {
-              if (!gameCompleted && !isAnimating) {
+            const handleBoundaryClick = () => {
+              if (!gameCompleted && !isAnimating && !isShaking) {
                 const numberElement = cell.querySelector('.number');
                 if (numberElement) {
+                  // 设置抖动状态
+                  isShaking = true;
+                  
                   // 移除之前的抖动类（如果存在）
                   numberElement.classList.remove('shake');
                   // 强制重绘
                   void numberElement.offsetWidth;
                   // 添加抖动类
                   numberElement.classList.add('shake');
-                  // 动画结束后移除类
+                  // 动画结束后移除类并重置状态
                   setTimeout(() => {
                     numberElement.classList.remove('shake');
+                    isShaking = false; // 重置抖动状态
                   }, 300);
                 }
               }
-            });
+            };
+            
+            // 边界位置的触摸反馈
+            const addBoundaryPressEffect = () => {
+              if (!gameCompleted && !isAnimating && !isShaking) {
+                number.classList.add('pressed');
+              }
+            };
+            
+            const removeBoundaryPressEffect = () => {
+              number.classList.remove('pressed');
+            };
+            
+            // 桌面端事件
+            cell.addEventListener('mousedown', addBoundaryPressEffect);
+            cell.addEventListener('mouseup', removeBoundaryPressEffect);
+            cell.addEventListener('mouseleave', removeBoundaryPressEffect);
+            cell.addEventListener('click', handleBoundaryClick);
+            
+            // 移动端触摸事件
+            cell.addEventListener('touchstart', (e) => {
+              e.preventDefault();
+              addBoundaryPressEffect();
+            }, { passive: false });
+            
+            cell.addEventListener('touchend', (e) => {
+              e.preventDefault();
+              removeBoundaryPressEffect();
+              handleBoundaryClick();
+            }, { passive: false });
+            
+            cell.addEventListener('touchcancel', removeBoundaryPressEffect);
           }
           gameGrid.appendChild(cell);
         }
@@ -799,7 +909,7 @@
         animatingElements[1].style.transform = `translate(-${moveDistance}px, 0)`; // 右上 -> 左上
         animatingElements[2].style.transform = `translate(${moveDistance}px, 0)`; // 左下 -> 右下
         animatingElements[3].style.transform = `translate(0, -${moveDistance}px)`; // 右下 -> 右上
-      }, 10);
+      }, 1);
       
       // 动画完成后清理
       setTimeout(() => {
@@ -829,7 +939,7 @@
             numberElements.forEach(number => {
               number.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
             });
-          }, 0);
+          }, 1);
           
           isAnimating = false;
           
@@ -838,7 +948,7 @@
             updateMoves();
             checkWin();
           }
-        }, 0);
+        }, 1);
       }, 400);
     }
     
