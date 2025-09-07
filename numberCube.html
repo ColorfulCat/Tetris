@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>数字魔方</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
+      padding: 20px;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .header-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    
+    .title {
+      font-size: 36px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      margin-bottom: 10px;
+    }
+    
+    .difficulty-section {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .difficulty-btn {
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .difficulty-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .difficulty-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+    }
+    
+    .stats-section {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .stat-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 12px 20px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      min-width: 100px;
+    }
+    
+    .stat-title {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .game-board {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      position: relative;
+    }
+    
+    #gameGrid {
+      background: rgba(187, 173, 160, 0.4);
+      border-radius: 8px;
+      position: relative;
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    .grid-cell {
+      background: rgba(238, 228, 218, 0.35);
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: visible;
+    }
+    
+    .grid-cell:hover {
+      background: rgba(238, 228, 218, 0.5);
+      transform: scale(1);
+    }
+    
+    .grid-cell:active {
+      transform: scale(1);
+    }
+    
+    .number {
+      background: white;
+      color: #333;
+      border-radius: 6px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .number.moving {
+      z-index: 100;
+      transform: scale(1.1);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* 抖动动画 */
+    .number.shake {
+      animation: shake 0.3s ease-in-out;
+    }
+    
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(-3px);
+      }
+      75% {
+        transform: translateX(3px);
+      }
+    }
+    
+    .control-section {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .control-btn {
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .control-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .control-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .control-btn:hover::before {
+      left: 100%;
+    }
+    
+    .control-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    
+    .game-win {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+    }
+    
+    .game-win h2 {
+      font-size: 48px;
+      color: #50C878;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+    }
+    
+    .final-stats {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .restart-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #50C878, #32CD32);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(80, 200, 120, 0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .restart-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(80, 200, 120, 0.6);
+    }
+    
+    /* 确认弹窗样式 */
+    .confirm-dialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      display: none;
+    }
+    
+    .confirm-content {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    .confirm-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: white;
+    }
+    
+    .confirm-message {
+      font-size: 16px;
+      margin-bottom: 25px;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.5;
+    }
+    
+    .confirm-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+    
+    .confirm-btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 80px;
+    }
+    
+    .confirm-btn.yes {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white;
+    }
+    
+    .confirm-btn.no {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .confirm-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .title {
+        font-size: 28px;
+      }
+      
+      .difficulty-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+      
+      .control-btn {
+        padding: 12px 24px;
+        font-size: 14px;
+      }
+      
+      .stat-box {
+        padding: 10px 16px;
+        min-width: 80px;
+      }
+      
+      .stat-value {
+        font-size: 20px;
+      }
+      
+      .confirm-content {
+        padding: 25px;
+      }
+      
+      .confirm-title {
+        font-size: 20px;
+      }
+      
+      .confirm-message {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <div class="header-section">
+      <h1 class="title">数字魔方</h1>
+      
+      <div class="difficulty-section">
+        <button class="difficulty-btn active" data-size="3">3×3</button>
+        <button class="difficulty-btn" data-size="4">4×4</button>
+        <button class="difficulty-btn" data-size="5">5×5</button>
+      </div>
+    </div>
+    
+    <div class="stats-section">
+      <div class="stat-box">
+        <div class="stat-title">步数</div>
+        <div class="stat-value" id="moves">0</div>
+      </div>
+      
+      <div class="stat-box">
+        <div class="stat-title">最佳</div>
+        <div class="stat-value" id="bestMoves">-</div>
+      </div>
+    </div>
+    
+    <div class="game-board">
+      <div id="gameGrid"></div>
+    </div>
+    
+    <div class="control-section">
+      <button class="control-btn" id="newGameBtn">新游戏</button>
+    </div>
+  </div>
+  
+  <div class="game-win" id="gameWin">
+    <h2>恭喜完成！</h2>
+    <div class="final-stats">
+      <div>用时步数: <span id="finalMoves">0</span></div>
+      <div id="newRecord" style="color: #FFD700; margin-top: 10px; display: none;">🎉 新纪录！</div>
+    </div>
+    <button class="restart-btn" id="restartBtn">再来一局</button>
+  </div>
+  
+  <!-- 确认弹窗 -->
+  <div class="confirm-dialog" id="confirmDialog">
+    <div class="confirm-content">
+      <div class="confirm-title">确认新游戏</div>
+      <div class="confirm-message">当前游戏进度将会丢失，确定要开始新游戏吗？</div>
+      <div class="confirm-buttons">
+        <button class="confirm-btn yes" id="confirmYes">确定</button>
+        <button class="confirm-btn no" id="confirmNo">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 游戏状态
+    let gridSize = 3;
+    let board = [];
+    let moves = 0;
+    let bestMoves = {};
+    let gameCompleted = false;
+    let isAnimating = false;
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      loadBestMoves();
+      setupEventListeners();
+      newGame();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 难度选择
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (isAnimating) return;
+          document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          gridSize = parseInt(btn.dataset.size);
+          newGame();
+        });
+      });
+      
+      // 新游戏按钮 - 显示确认弹窗
+      document.getElementById('newGameBtn').addEventListener('click', () => {
+        if (!isAnimating) {
+          if (moves > 0 && !gameCompleted) {
+            showConfirmDialog();
+          } else {
+            startNewGame();
+          }
+        }
+      });
+      
+      // 确认弹窗按钮
+      document.getElementById('confirmYes').addEventListener('click', () => {
+        hideConfirmDialog();
+        startNewGame();
+      });
+      
+      document.getElementById('confirmNo').addEventListener('click', () => {
+        hideConfirmDialog();
+      });
+      
+      // 胜利界面重新开始按钮
+      document.getElementById('restartBtn').addEventListener('click', () => {
+        if (!isAnimating) startNewGame();
+      });
+    }
+    
+    // 显示确认弹窗
+    function showConfirmDialog() {
+      document.getElementById('confirmDialog').style.display = 'flex';
+    }
+    
+    // 隐藏确认弹窗
+    function hideConfirmDialog() {
+      document.getElementById('confirmDialog').style.display = 'none';
+    }
+    
+    // 新游戏（内部函数）
+    function startNewGame() {
+      moves = 0;
+      gameCompleted = false;
+      isAnimating = false;
+      updateMoves();
+      updateBestMoves();
+      document.getElementById('gameWin').style.display = 'none';
+      
+      // 创建有序数组（所有位置都有数字）
+      board = [];
+      for (let i = 0; i < gridSize; i++) {
+        board[i] = [];
+        for (let j = 0; j < gridSize; j++) {
+          board[i][j] = i * gridSize + j + 1;
+        }
+      }
+      
+      // 先更新显示，再打乱棋盘
+      updateDisplay();
+      setTimeout(() => {
+        shuffleBoard();
+      }, 50);
+    }
+    
+    // 新游戏（对外接口）
+    function newGame() {
+      startNewGame();
+    }
+    
+    // 打乱棋盘
+    function shuffleBoard() {
+      // 执行随机旋转操作来打乱
+      for (let i = 0; i < gridSize * gridSize * 3; i++) {
+        const row = Math.floor(Math.random() * (gridSize - 1));
+        const col = Math.floor(Math.random() * (gridSize - 1));
+        rotateCounterClockwiseData(row, col); // 只修改数据，不做动画
+      }
+      updateDisplay();
+    }
+    
+    // 只修改数据的旋转函数
+    function rotateCounterClockwiseData(row, col) {
+      if (row >= gridSize - 1 || col >= gridSize - 1) return;
+      
+      // 获取2x2区域的四个值
+      const topLeft = board[row][col];
+      const topRight = board[row][col + 1];
+      const bottomLeft = board[row + 1][col];
+      const bottomRight = board[row + 1][col + 1];
+      
+      // 逆时针旋转数据：左上->左下，左下->右下，右下->右上，右上->左上
+      board[row][col] = topRight;           // 左上 <- 右上
+      board[row][col + 1] = bottomRight;    // 右上 <- 右下
+      board[row + 1][col] = topLeft;        // 左下 <- 左上
+      board[row + 1][col + 1] = bottomLeft; // 右下 <- 左下
+    }
+    
+    // 更新显示
+    function updateDisplay() {
+      const gameGrid = document.getElementById('gameGrid');
+      
+      // 设置网格大小
+      const cellSize = Math.min(300 / gridSize, 80);
+      gameGrid.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
+      gameGrid.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
+      gameGrid.style.width = `${cellSize * gridSize + (gridSize - 1) * 8 + 20}px`;
+      gameGrid.style.height = `${cellSize * gridSize + (gridSize - 1) * 8 + 20}px`;
+      
+      // 清空网格
+      gameGrid.innerHTML = '';
+      
+      // 创建格子
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.style.width = `${cellSize}px`;
+          cell.style.height = `${cellSize}px`;
+          cell.style.fontSize = `${cellSize * 0.4}px`;
+          cell.style.position = 'relative';
+          
+          const number = document.createElement('div');
+          number.className = 'number';
+          number.textContent = board[i][j];
+          number.style.width = `${cellSize}px`;
+          number.style.height = `${cellSize}px`;
+          number.style.fontSize = `${cellSize * 0.4}px`;
+          cell.appendChild(number);
+          
+          // 添加点击事件（只有非边界位置才能点击）
+          if (i < gridSize - 1 && j < gridSize - 1) {
+            cell.addEventListener('click', () => {
+              if (!gameCompleted && !isAnimating) {
+                rotateCounterClockwise(i, j, true);
+              }
+            });
+          } else {
+            // 为边界位置添加抖动效果
+            cell.addEventListener('click', () => {
+              if (!gameCompleted && !isAnimating) {
+                const numberElement = cell.querySelector('.number');
+                if (numberElement) {
+                  // 移除之前的抖动类（如果存在）
+                  numberElement.classList.remove('shake');
+                  // 强制重绘
+                  void numberElement.offsetWidth;
+                  // 添加抖动类
+                  numberElement.classList.add('shake');
+                  // 动画结束后移除类
+                  setTimeout(() => {
+                    numberElement.classList.remove('shake');
+                  }, 300);
+                }
+              }
+            });
+          }
+          gameGrid.appendChild(cell);
+        }
+      }
+    }
+    
+    // 逆时针旋转2x2区域
+    function rotateCounterClockwise(row, col, countMove = true) {
+      if (row >= gridSize - 1 || col >= gridSize - 1 || isAnimating) return;
+      
+      isAnimating = true;
+      
+      // 获取相关的DOM元素（在修改数据之前）
+      const cells = document.querySelectorAll('.grid-cell');
+      const indices = [
+        row * gridSize + col,
+        row * gridSize + col + 1,
+        (row + 1) * gridSize + col,
+        (row + 1) * gridSize + col + 1
+      ];
+      
+      const cellElements = indices.map(index => cells[index]);
+      const numberElements = cellElements.map(cell => {
+        if (cell) {
+          return cell.querySelector('.number');
+        }
+        return null;
+      }).filter(el => el !== null);
+      
+      // 如果没有找到足够的元素，直接更新显示
+      if (numberElements.length < 4) {
+        rotateCounterClockwiseData(row, col);
+        updateDisplay();
+        isAnimating = false;
+        if (countMove) {
+          moves++;
+          updateMoves();
+          checkWin();
+        }
+        return;
+      }
+      
+      // 保存原始数字内容（用于动画显示）
+      const originalNumbers = numberElements.map(el => el.textContent);
+      
+      // 先修改数据
+      rotateCounterClockwiseData(row, col);
+      
+      // 计算位移距离
+      const cellSize = Math.min(300 / gridSize, 80);
+      const gap = 8;
+      const moveDistance = cellSize + gap;
+      
+      // 获取游戏网格的位置信息，用于计算绝对位置
+      const gameGrid = document.getElementById('gameGrid');
+      const gridRect = gameGrid.getBoundingClientRect();
+      const gameBoard = document.querySelector('.game-board');
+      const boardRect = gameBoard.getBoundingClientRect();
+      
+      // 计算相对于游戏板的偏移
+      const offsetX = gridRect.left - boardRect.left;
+      const offsetY = gridRect.top - boardRect.top;
+      
+      // 为每个数字元素创建绝对定位的克隆进行动画
+      const animatingElements = [];
+      numberElements.forEach((number, index) => {
+        const clone = number.cloneNode(true);
+        clone.classList.add('moving');
+        
+        // 使用原始数字内容
+        clone.textContent = originalNumbers[index];
+        
+        // 计算当前位置
+        const currentRow = Math.floor(indices[index] / gridSize);
+        const currentCol = indices[index] % gridSize;
+        const currentX = offsetX + 10 + currentCol * (cellSize + gap);
+        const currentY = offsetY + 10 + currentRow * (cellSize + gap);
+        
+        // 设置绝对定位
+        clone.style.position = 'absolute';
+        clone.style.left = `${currentX}px`;
+        clone.style.top = `${currentY}px`;
+        clone.style.zIndex = '100';
+        
+        // 添加到游戏板
+        gameBoard.appendChild(clone);
+        animatingElements.push(clone);
+        
+        // 立即更新原始元素的数字内容（显示最终结果）
+        number.textContent = board[Math.floor(indices[index] / gridSize)][indices[index] % gridSize];
+        // 隐藏原始元素
+        number.style.opacity = '0';
+        number.style.transition = 'opacity 0.1s ease';
+      });
+      
+      // 设置逆时针位移动画
+      setTimeout(() => {
+        // 逆时针旋转：左上->左下，右上->左上，右下->右上，左下->右下
+        animatingElements[0].style.transform = `translate(0, ${moveDistance}px)`; // 左上 -> 左下
+        animatingElements[1].style.transform = `translate(-${moveDistance}px, 0)`; // 右上 -> 左上
+        animatingElements[2].style.transform = `translate(${moveDistance}px, 0)`; // 左下 -> 右下
+        animatingElements[3].style.transform = `translate(0, -${moveDistance}px)`; // 右下 -> 右上
+      }, 10);
+      
+      // 动画完成后清理
+      setTimeout(() => {
+        // 先让动画元素淡出
+        animatingElements.forEach(element => {
+          element.style.opacity = '0';
+          element.style.transition = 'opacity 0s ease';
+        });
+        
+        // 稍微延迟后移除动画元素并显示原始元素
+        setTimeout(() => {
+          // 移除动画元素
+          animatingElements.forEach(element => {
+            if (element.parentNode) {
+              element.parentNode.removeChild(element);
+            }
+          });
+          
+          // 恢复原始元素显示
+          numberElements.forEach(number => {
+            number.style.opacity = '1';
+            number.style.transition = 'opacity 0s ease';
+          });
+          
+          // 清理过渡效果
+          setTimeout(() => {
+            numberElements.forEach(number => {
+              number.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            });
+          }, 0);
+          
+          isAnimating = false;
+          
+          if (countMove) {
+            moves++;
+            updateMoves();
+            checkWin();
+          }
+        }, 0);
+      }, 400);
+    }
+    
+    // 检查是否获胜
+    function checkWin() {
+      let expected = 1;
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          if (board[i][j] !== expected) return false;
+          expected++;
+        }
+      }
+      
+      // 游戏完成
+      gameCompleted = true;
+      document.getElementById('finalMoves').textContent = moves;
+      
+      // 检查是否是新纪录
+      const currentBest = bestMoves[gridSize];
+      if (!currentBest || moves < currentBest) {
+        bestMoves[gridSize] = moves;
+        saveBestMoves();
+        updateBestMoves();
+        document.getElementById('newRecord').style.display = 'block';
+      } else {
+        document.getElementById('newRecord').style.display = 'none';
+      }
+      
+      setTimeout(() => {
+        document.getElementById('gameWin').style.display = 'flex';
+      }, 500);
+      
+      return true;
+    }
+    
+    // 更新步数显示
+    function updateMoves() {
+      document.getElementById('moves').textContent = moves;
+    }
+    
+    // 更新最佳步数显示
+    function updateBestMoves() {
+      const best = bestMoves[gridSize];
+      document.getElementById('bestMoves').textContent = best ? best : '-';
+    }
+    
+    // 保存最佳步数
+    function saveBestMoves() {
+      localStorage.setItem('numberCube-bestMoves', JSON.stringify(bestMoves));
+    }
+    
+    // 加载最佳步数
+    function loadBestMoves() {
+      const saved = localStorage.getItem('numberCube-bestMoves');
+      if (saved) {
+        bestMoves = JSON.parse(saved);
+      } else {
+        bestMoves = {};
+      }
+    }
+    
+    // 初始化游戏
+    init();
+  </script>
+</body>
+</html>

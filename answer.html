@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>答案之书</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      position: relative;
+      z-index: 10;
+      padding: 20px;
+      max-width: 90vw;
+      text-align: center;
+    }
+    
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #fff, #f0f0f0, #fff);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .subtitle {
+      font-size: 18px;
+      color: #a0a0a0;
+      margin-bottom: 40px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .book-container {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      min-width: 300px;
+    }
+    
+    .ask-button {
+      padding: 20px 60px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      min-width: 250px;
+    }
+    
+    .ask-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .ask-button:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 
+        0 16px 45px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .ask-button:hover::before {
+      left: 100%;
+    }
+    
+    .ask-button:active {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    }
+    
+    .ask-button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* 弹窗样式 */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-content {
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 90vw;
+      max-height: 80vh;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      text-align: center;
+      transform: scale(0.7);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+    }
+    
+    .modal.show .modal-content {
+      transform: scale(1);
+    }
+    
+    /* Loading 动画 */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+    
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 20px;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 答案显示 */
+    .answer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+    
+    .answer-text {
+      font-size: 24px;
+      line-height: 1.6;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      margin: 20px 0;
+    }
+    
+    .answer-positive {
+      color: #50C878;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.3);
+    }
+    
+    .answer-neutral {
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    .answer-negative {
+      color: #FF6B6B;
+      text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+    }
+    
+    .close-button {
+      padding: 15px 40px;
+      background: linear-gradient(to right, #ff416c, #ff4b2b);
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .close-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(255, 75, 43, 0.6);
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 手机适配 */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 36px;
+      }
+      
+      .subtitle {
+        font-size: 16px;
+      }
+      
+      .book-container {
+        padding: 30px 20px;
+        min-width: 280px;
+      }
+      
+      .ask-button {
+        padding: 18px 40px;
+        font-size: 20px;
+        min-width: 200px;
+      }
+      
+      .modal-content {
+        padding: 30px 20px;
+        margin: 20px;
+      }
+      
+      .answer-text {
+        font-size: 20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .title {
+        font-size: 28px;
+      }
+      
+      .book-container {
+        padding: 25px 15px;
+      }
+      
+      .ask-button {
+        padding: 16px 30px;
+        font-size: 18px;
+        min-width: 180px;
+      }
+      
+      .answer-text {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="app-container">
+    <h1 class="title">答案之书</h1>
+    <p class="subtitle">心中默念你的问题，然后寻找答案...</p>
+    
+    <div class="book-container">
+      <button class="ask-button" id="askButton">寻找答案</button>
+    </div>
+  </div>
+  
+  <!-- 弹窗 -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <!-- Loading 状态 -->
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在寻找答案...</div>
+      </div>
+      
+      <!-- 答案显示 -->
+      <div class="answer" id="answer">
+        <div class="answer-text" id="answerText"></div>
+        <button class="close-button" id="closeButton">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 答案数据库 - 200个答案
+    const answers = {
+      positive: [
+        // 正向答案 (60% = 120个)
+        "是的，一切都会如你所愿。",
+        "绝对可以，相信自己的直觉。",
+        "当然，时机已经成熟。",
+        "毫无疑问，答案是肯定的。",
+        "是的，你走在正确的道路上。",
+        "完全正确，继续前进吧。",
+        "是的，你的努力会得到回报。",
+        "绝对会的，保持积极的心态。",
+        "当然可以，你有这个能力。",
+        "是的，机会就在眼前。",
+        "毫无疑问，你会成功的。",
+        "是的，相信你的选择。",
+        "绝对正确，坚持下去。",
+        "当然，你值得拥有最好的。",
+        "是的，一切都在朝好的方向发展。",
+        "完全可以，你的想法很棒。",
+        "是的，现在就是最佳时机。",
+        "绝对会实现，耐心等待。",
+        "当然，你的直觉是对的。",
+        "是的，好运即将降临。",
+        "毫无疑问，你做得很好。",
+        "是的，你的付出会有收获。",
+        "绝对可以，勇敢地去做吧。",
+        "当然，你有无限的可能。",
+        "是的，相信奇迹会发生。",
+        "完全正确，你的选择明智。",
+        "是的，成功就在不远处。",
+        "绝对会的，保持信心。",
+        "当然可以，你很有天赋。",
+        "是的，一切都会水到渠成。",
+        "毫无疑问，你会找到答案。",
+        "是的，你的梦想会实现。",
+        "绝对正确，继续努力。",
+        "当然，你值得被爱。",
+        "是的，好事即将发生。",
+        "完全可以，相信自己。",
+        "是的，你的计划会成功。",
+        "绝对会的，时间会证明一切。",
+        "当然，你有改变的力量。",
+        "是的，幸福正在路上。",
+        "毫无疑问，你会克服困难。",
+        "是的，你的坚持是值得的。",
+        "绝对可以，机会属于你。",
+        "当然，你的未来一片光明。",
+        "是的，相信内心的声音。",
+        "完全正确，你走对了路。",
+        "是的，好运会眷顾你。",
+        "绝对会的，保持乐观。",
+        "当然可以，你很特别。",
+        "是的，一切都会好起来的。",
+        "毫无疑问，你有这个实力。",
+        "是的，你的愿望会成真。",
+        "绝对正确，相信过程。",
+        "当然，你值得拥有快乐。",
+        "是的，成功在向你招手。",
+        "完全可以，你的想法可行。",
+        "是的，现在是行动的时候。",
+        "绝对会的，耐心会有回报。",
+        "当然，你的努力不会白费。",
+        "是的，好消息即将到来。",
+        "毫无疑问，你会找到方法。",
+        "是的，你的选择是明智的。",
+        "绝对可以，勇敢追求梦想。",
+        "当然，你有创造奇迹的能力。",
+        "是的，一切都在完美的时机。",
+        "完全正确，你的直觉很准。",
+        "是的，幸运之神在眷顾你。",
+        "绝对会的，保持积极态度。",
+        "当然可以，你值得最好的。",
+        "是的，机遇正在等待你。",
+        "毫无疑问，你会取得成功。",
+        "是的，你的心愿会实现。",
+        "绝对正确，坚持就是胜利。",
+        "当然，你有无穷的潜力。",
+        "是的，好运即将降临到你身上。",
+        "完全可以，相信自己的能力。",
+        "是的，一切都会按计划进行。",
+        "绝对会的，时机已经到来。",
+        "当然，你的付出会得到认可。",
+        "是的，成功的大门为你敞开。",
+        "毫无疑问，你会找到真爱。",
+        "是的，你的事业会蒸蒸日上。",
+        "绝对可以，机会就在眼前。",
+        "当然，你值得拥有美好的未来。",
+        "是的，一切困难都会迎刃而解。",
+        "完全正确，你的判断很准确。",
+        "是的，好事正在悄悄发生。",
+        "绝对会的，相信时间的力量。",
+        "当然可以，你有改变命运的能力。",
+        "是的，幸福就在转角处等你。",
+        "毫无疑问，你会实现目标。",
+        "是的，你的努力会开花结果。",
+        "绝对正确，继续保持信念。",
+        "当然，你值得拥有一切美好。",
+        "是的，奇迹即将在你身上发生。",
+        "完全可以，你的梦想触手可及。",
+        "是的，成功的种子已经播下。",
+        "绝对会的，保持初心不变。",
+        "当然，你有创造历史的潜力。",
+        "是的，一切都会超出你的期待。",
+        "毫无疑问，你会成为赢家。",
+        "是的，你的人生会精彩纷呈。",
+        "绝对可以，勇敢地迈出第一步。",
+        "当然，你值得拥有真正的快乐。",
+        "是的，好运会一直伴随着你。",
+        "完全正确，你的选择无比明智。",
+        "是的，成功正在向你走来。",
+        "绝对会的，相信美好即将发生。",
+        "当然可以，你有无限的可能性。",
+        "是的，一切都会如你所愿实现。",
+        "毫无疑问，你会找到属于自己的道路。",
+        "是的，你的未来充满希望和光明。",
+        "绝对正确，坚持下去就会看到曙光。",
+        "当然，你值得拥有世界上最美好的东西。",
+        "是的，奇迹正在你的生命中悄然发生。",
+        "完全可以，你的能力远超你的想象。",
+        "是的，成功的钥匙就在你手中。",
+        "绝对会的，时间会证明你的正确。",
+        "当然，你有改写命运的神奇力量。",
+        "是的，幸福的大门正为你缓缓打开。",
+        "毫无疑问，你会成就非凡的人生。",
+        "是的，你的每一步都走在成功的路上。",
+        "绝对可以，相信自己就是最大的力量。",
+        "当然，你值得拥有童话般的美好结局。"
+      ],
+      neutral: [
+        // 中立答案 (20% = 40个)
+        "现在还不是时候，再等等看。",
+        "答案并不明确，需要更多信息。",
+        "可能性各占一半，谨慎考虑。",
+        "时机尚未成熟，耐心等待。",
+        "情况比较复杂，需要深思熟虑。",
+        "答案模糊不清，再观察一段时间。",
+        "现在下结论还为时过早。",
+        "需要更多的准备和思考。",
+        "情况正在发生变化，保持关注。",
+        "答案取决于你的行动。",
+        "现在还有很多不确定因素。",
+        "需要更多的耐心和等待。",
+        "情况还在发展中，静观其变。",
+        "答案会在适当的时候显现。",
+        "现在专注于当下更重要。",
+        "需要更多的信息才能确定。",
+        "时间会给出最好的答案。",
+        "现在还不是做决定的时候。",
+        "情况需要进一步观察。",
+        "答案可能比你想象的更复杂。",
+        "现在保持中立态度比较好。",
+        "需要更多的思考和准备。",
+        "情况正在慢慢明朗化。",
+        "答案会在合适的时机出现。",
+        "现在专注于自我提升更重要。",
+        "需要更多的经验和智慧。",
+        "情况还有待进一步发展。",
+        "答案可能需要更长时间才能明确。",
+        "现在保持开放的心态。",
+        "需要更多的观察和分析。",
+        "情况比表面看起来更复杂。",
+        "答案会随着时间逐渐清晰。",
+        "现在还不是急于求成的时候。",
+        "需要更多的准备工作。",
+        "情况正在朝着某个方向发展。",
+        "答案可能出乎你的意料。",
+        "现在保持平常心比较好。",
+        "需要更多的思考和规划。",
+        "情况还需要时间来验证。",
+        "答案会在你最需要的时候出现。"
+      ],
+      negative: [
+        // 负向答案 (20% = 40个)
+        "现在不是好时机，建议重新考虑。",
+        "恐怕不太可能，换个方向试试。",
+        "答案是否定的，寻找其他选择。",
+        "目前看来困难重重，需要调整策略。",
+        "不建议现在行动，等待更好的机会。",
+        "可能会遇到阻碍，做好心理准备。",
+        "现在的条件还不够成熟。",
+        "恐怕结果不会如你所愿。",
+        "建议暂停计划，重新评估。",
+        "现在不是最佳选择，再想想其他办法。",
+        "可能会有意想不到的困难。",
+        "目前的方向可能不太正确。",
+        "建议先解决其他问题。",
+        "现在行动可能为时过早。",
+        "恐怕需要更多的准备时间。",
+        "结果可能不会达到预期。",
+        "建议重新制定计划。",
+        "现在的想法可能需要调整。",
+        "可能会遇到一些挫折。",
+        "目前还不具备成功的条件。",
+        "建议先提升自己的能力。",
+        "现在可能不是合适的时机。",
+        "恐怕会有一些阻力。",
+        "结果可能与期望有差距。",
+        "建议寻求其他人的建议。",
+        "现在的环境可能不太有利。",
+        "可能需要更长的时间才能实现。",
+        "目前的资源可能不够充足。",
+        "建议先解决基础问题。",
+        "现在可能面临一些挑战。",
+        "恐怕需要改变现有的方法。",
+        "结果可能不会立即显现。",
+        "建议保持谨慎的态度。",
+        "现在可能不是投入的好时机。",
+        "可能会遇到一些意外情况。",
+        "目前的计划可能需要修正。",
+        "建议先观察一段时间。",
+        "现在的条件可能还不够理想。",
+        "恐怕需要更多的耐心等待。",
+        "结果可能需要付出更多的努力才能实现。"
+      ]
+    };
+    
+    // 游戏状态
+    let isSearching = false;
+    
+    // DOM 元素
+    const askButton = document.getElementById('askButton');
+    const modal = document.getElementById('modal');
+    const loading = document.getElementById('loading');
+    const answer = document.getElementById('answer');
+    const answerText = document.getElementById('answerText');
+    const closeButton = document.getElementById('closeButton');
+    
+    // 初始化
+    function init() {
+      createBackground();
+      setupEventListeners();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        // 随机大小
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        
+        // 随机位置
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        
+        // 随机颜色
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // 随机动画
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      askButton.addEventListener('click', searchAnswer);
+      closeButton.addEventListener('click', closeModal);
+      
+      // 点击弹窗外部关闭
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+      
+      // ESC键关闭弹窗
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+          closeModal();
+        }
+      });
+    }
+    
+    // 寻找答案
+    function searchAnswer() {
+      if (isSearching) return;
+      
+      isSearching = true;
+      askButton.disabled = true;
+      
+      // 显示弹窗和loading
+      showModal();
+      showLoading();
+      
+      // 模拟搜索时间 (2-4秒)
+      const searchTime = Math.random() * 2000 + 2000;
+      
+      setTimeout(() => {
+        const selectedAnswer = getRandomAnswer();
+        showAnswer(selectedAnswer);
+        isSearching = false;
+        askButton.disabled = false;
+      }, searchTime);
+    }
+    
+    // 获取随机答案
+    function getRandomAnswer() {
+      const random = Math.random();
+      let category, answerList;
+      
+      if (random < 0.6) {
+        // 60% 正向答案
+        category = 'positive';
+        answerList = answers.positive;
+      } else if (random < 0.8) {
+        // 20% 中立答案
+        category = 'neutral';
+        answerList = answers.neutral;
+      } else {
+        // 20% 负向答案
+        category = 'negative';
+        answerList = answers.negative;
+      }
+      
+      const randomIndex = Math.floor(Math.random() * answerList.length);
+      return {
+        text: answerList[randomIndex],
+        category: category
+      };
+    }
+    
+    // 显示弹窗
+    function showModal() {
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // 关闭弹窗
+    function closeModal() {
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+      
+      // 重置状态
+      setTimeout(() => {
+        loading.style.display = 'flex';
+        answer.style.display = 'none';
+        answerText.className = 'answer-text';
+      }, 300);
+    }
+    
+    // 显示loading
+    function showLoading() {
+      loading.style.display = 'flex';
+      answer.style.display = 'none';
+    }
+    
+    // 显示答案
+    function showAnswer(answerData) {
+      loading.style.display = 'none';
+      answer.style.display = 'flex';
+      
+      answerText.textContent = answerData.text;
+      answerText.className = `answer-text answer-${answerData.category}`;
+    }
+    
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

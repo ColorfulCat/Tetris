@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>算24点</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+      position: relative;
+      z-index: 10;
+      max-width: 90vw;
+    }
+    
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .numbers-container {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      min-height: 200px;
+      align-items: center;
+    }
+    
+    .number-card {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 36px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: scale(0) rotateY(180deg);
+    }
+    
+    .number-card.show {
+      animation: cardAppear 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    }
+    
+    .number-card:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+    }
+    
+    @keyframes cardAppear {
+      0% {
+        opacity: 0;
+        transform: scale(0) rotateY(180deg) translateY(-50px);
+      }
+      50% {
+        opacity: 0.8;
+        transform: scale(1.2) rotateY(90deg) translateY(-20px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) rotateY(0deg) translateY(0px);
+      }
+    }
+    
+    .buttons-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .game-btn {
+      padding: 18px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      min-width: 140px;
+    }
+    
+    .game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .game-btn:active {
+      transform: translateY(-1px) scale(0.98);
+      box-shadow: 
+        0 6px 20px rgba(102, 126, 234, 0.4),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    }
+    
+    .answer-btn {
+      background: linear-gradient(135deg, #50C878 0%, #32CD32 100%);
+      box-shadow: 0 8px 25px rgba(80, 200, 120, 0.4);
+    }
+    
+    .answer-btn:hover {
+      background: linear-gradient(135deg, #32CD32 0%, #50C878 100%);
+      box-shadow: 0 12px 35px rgba(80, 200, 120, 0.6);
+    }
+    
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      display: none;
+    }
+    
+    .modal-content {
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 90vw;
+      max-height: 80vh;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      text-align: center;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal h2 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: #50C878;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+      flex-shrink: 0;
+    }
+    
+    .modal-header {
+      flex-shrink: 0;
+      margin-bottom: 20px;
+    }
+    
+    .modal-header p {
+      font-size: 18px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    
+    .solutions-container {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 400px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .solution-item {
+      background: rgba(102, 126, 234, 0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: #fff;
+      border-left: 4px solid #667eea;
+      transition: all 0.3s ease;
+    }
+    
+    .solution-item:hover {
+      background: rgba(102, 126, 234, 0.3);
+      transform: translateX(5px);
+    }
+    
+    .solution-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .no-solution {
+      color: #ff6b6b;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 20px;
+    }
+    
+    .close-btn {
+      margin-top: 30px;
+      padding: 15px 30px;
+      background: linear-gradient(to right, #ff416c, #ff4b2b);
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(255, 75, 43, 0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+    
+    .close-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(255, 75, 43, 0.6);
+    }
+    
+    .placeholder-text {
+      font-size: 24px;
+      color: #a0a0a0;
+      text-align: center;
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 滚动条样式 */
+    .solutions-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .solutions-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    
+    .solutions-container::-webkit-scrollbar-thumb {
+      background: rgba(102, 126, 234, 0.6);
+      border-radius: 4px;
+    }
+    
+    .solutions-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(102, 126, 234, 0.8);
+    }
+    
+    /* 移动端适配 - 增大显示内容 */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 42px; /* 从36px增大到42px */
+      }
+      
+      .number-card {
+        width: 75px; /* 从85px调整到75px，避免换行 */
+        height: 75px;
+        font-size: 28px; /* 从32px调整到28px */
+      }
+      
+      .game-btn {
+        padding: 18px 35px; /* 从15px 30px增大到18px 35px */
+        font-size: 18px; /* 从16px增大到18px */
+        min-width: 140px; /* 从120px增大到140px */
+      }
+      
+      .numbers-container {
+        padding: 25px; /* 从20px增大到25px */
+        gap: 15px; /* 从18px调整到15px，减少间距避免换行 */
+      }
+      
+      .buttons-container {
+        gap: 18px; /* 从15px增大到18px */
+      }
+      
+      .modal-content {
+        padding: 35px 25px; /* 从30px 20px增大到35px 25px */
+      }
+      
+      .modal h2 {
+        font-size: 32px; /* 从32px增大到36px */
+      }
+      
+      .modal-header p {
+        font-size: 20px; /* 从18px增大到20px */
+      }
+      
+      .solution-item {
+        font-size: 18px; /* 从16px增大到18px */
+        padding: 14px 18px; /* 从12px 16px增大到14px 18px */
+      }
+      
+      .solutions-container {
+        max-height: 350px; /* 从300px增大到350px */
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .title {
+        font-size: 36px; /* 从28px增大到36px */
+      }
+      
+      .number-card {
+        width: 65px; /* 从75px调整到65px，确保小屏幕不换行 */
+        height: 65px;
+        font-size: 24px; /* 从28px调整到24px */
+      }
+      
+      .game-btn {
+        padding: 15px 30px; /* 从12px 25px增大到15px 30px */
+        font-size: 16px; /* 从14px增大到16px */
+        min-width: 120px; /* 从100px增大到120px */
+      }
+      
+      .numbers-container {
+        gap: 12px; /* 进一步减少间距 */
+        padding: 20px; /* 减少内边距 */
+      }
+      
+      .solution-item {
+        font-size: 16px; /* 从14px增大到16px */
+        padding: 12px 16px; /* 从10px 12px增大到12px 16px */
+      }
+      
+      .modal h2 {
+        font-size: 32px; /* 增大标题字体 */
+      }
+      
+      .modal-header p {
+        font-size: 18px; /* 增大数字显示字体 */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <h1 class="title">算24点</h1>
+    
+    <div class="numbers-container" id="numbersContainer">
+      <div class="placeholder-text">点击开始游戏生成数字</div>
+    </div>
+    
+    <div class="buttons-container">
+      <button class="game-btn" id="startBtn">开始游戏</button>
+      <button class="game-btn answer-btn" id="answerBtn">查看答案</button>
+    </div>
+  </div>
+  
+  <!-- 答案弹窗 -->
+  <div class="modal" id="answerModal">
+    <div class="modal-content">
+      <h2>计算答案</h2>
+      <div class="modal-header">
+        <p id="numbersDisplay"></p>
+      </div>
+      <div class="solutions-container" id="solutionsContainer">
+        <!-- 解答列表将在这里动态生成 -->
+      </div>
+      <button class="close-btn" id="closeBtn">关闭</button>
+    </div>
+  </div>
+
+  <script>
+    let currentNumbers = [];
+    let solutions = [];
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      setupEventListeners();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      document.getElementById('startBtn').addEventListener('click', startGame);
+      document.getElementById('answerBtn').addEventListener('click', showAnswer);
+      document.getElementById('closeBtn').addEventListener('click', closeModal);
+      
+      // 点击模态框外部关闭
+      document.getElementById('answerModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeModal();
+        }
+      });
+    }
+    
+    // 开始游戏
+    function startGame() {
+      // 生成4个随机数字
+      currentNumbers = [];
+      for (let i = 0; i < 4; i++) {
+        currentNumbers.push(Math.floor(Math.random() * 9) + 1);
+      }
+      
+      // 显示数字
+      displayNumbers();
+      
+      // 计算所有可能的解
+      solutions = solve24(currentNumbers);
+      
+      // 显示查看答案按钮
+      document.getElementById('answerBtn').style.display = 'inline-block';
+    }
+    
+    // 显示数字（优化动画）
+    function displayNumbers() {
+      const container = document.getElementById('numbersContainer');
+      container.innerHTML = '';
+      
+      currentNumbers.forEach((num, index) => {
+        const card = document.createElement('div');
+        card.className = 'number-card';
+        card.textContent = num;
+        container.appendChild(card);
+        
+        // 延迟添加动画类，创造更好的视觉效果
+        setTimeout(() => {
+          card.classList.add('show');
+        }, index * 150);
+      });
+    }
+    
+    // 显示答案（移除序号）
+    function showAnswer() {
+      const modal = document.getElementById('answerModal');
+      const numbersDisplay = document.getElementById('numbersDisplay');
+      const solutionsContainer = document.getElementById('solutionsContainer');
+      
+      // 显示当前数字
+      numbersDisplay.textContent = `数字：${currentNumbers.join(', ')}`;
+      
+      // 清空之前的解答
+      solutionsContainer.innerHTML = '';
+      
+      if (solutions.length > 0) {
+        // 显示所有不重复的解答（不显示序号）
+        solutions.forEach((solution) => {
+          const solutionItem = document.createElement('div');
+          solutionItem.className = 'solution-item';
+          solutionItem.textContent = `${solution} = 24`; // 移除了序号
+          solutionsContainer.appendChild(solutionItem);
+        });
+      } else {
+        // 无解情况
+        const noSolution = document.createElement('div');
+        noSolution.className = 'no-solution';
+        noSolution.innerHTML = `
+          <p>无解！</p>
+          <p style="font-size: 16px; color: #ccc; margin-top: 10px;">这四个数字无法通过加减乘除运算得到24。</p>
+        `;
+        solutionsContainer.appendChild(noSolution);
+      }
+      
+      modal.style.display = 'flex';
+    }
+    
+    // 关闭模态框
+    function closeModal() {
+      document.getElementById('answerModal').style.display = 'none';
+    }
+    
+    // 算24点核心算法（修正计算逻辑）
+    function solve24(numbers) {
+      const solutions = new Set();
+      const ops = ['+', '-', '*', '/'];
+      const target = 24;
+      
+      // 生成所有可能的数字排列
+      function permute(arr) {
+        if (arr.length <= 1) return [arr];
+        const result = [];
+        for (let i = 0; i < arr.length; i++) {
+          const rest = permute(arr.slice(0, i).concat(arr.slice(i + 1)));
+          for (let j = 0; j < rest.length; j++) {
+            result.push([arr[i]].concat(rest[j]));
+          }
+        }
+        return result;
+      }
+      
+      // 计算表达式
+      function calculate(a, b, op) {
+        switch (op) {
+          case '+': return a + b;
+          case '-': return a - b;
+          case '*': return a * b;
+          case '/': return b !== 0 ? a / b : null;
+          default: return null;
+        }
+      }
+      
+      // 检查是否等于24（精确检查）
+      function isTarget(num) {
+        return Math.abs(num - target) < 1e-9;
+      }
+      
+      // 验证表达式是否真的等于24
+      function verifyExpression(expr) {
+        try {
+          // 安全地计算表达式
+          const result = Function('"use strict"; return (' + expr + ')')();
+          return Math.abs(result - target) < 1e-9;
+        } catch (e) {
+          return false;
+        }
+      }
+      
+      // 判断左操作数是否需要括号
+      function needParenthesesForLeft(expr, op) {
+        // 对于乘法和除法，如果左操作数包含加法或减法，需要括号
+        if (op === '*' || op === '/') {
+          return expr.includes('+') || expr.includes('-');
+        }
+        return false;
+      }
+      
+      // 判断右操作数是否需要括号
+      function needParenthesesForRight(expr, op) {
+        // 对于减法，如果右操作数包含加法或减法，需要括号
+        if (op === '-') {
+          return expr.includes('+') || expr.includes('-');
+        }
+        
+        // 对于除法，如果右操作数包含任何运算符，需要括号
+        if (op === '/') {
+          return expr.includes('+') || expr.includes('-') || expr.includes('*') || expr.includes('/');
+        }
+        
+        // 对于乘法，如果右操作数包含加法或减法，需要括号
+        if (op === '*') {
+          return expr.includes('+') || expr.includes('-');
+        }
+        
+        return false;
+      }
+      
+      // 智能的表达式生成函数
+      function generateExpression(expr1, expr2, op) {
+        // 检查是否为单个数字
+        const isExpr1SingleNumber = /^\d+(\.\d+)?$/.test(expr1.trim());
+        const isExpr2SingleNumber = /^\d+(\.\d+)?$/.test(expr2.trim());
+        
+        let leftPart = expr1;
+        let rightPart = expr2;
+        
+        // 只有复合表达式才可能需要括号
+        if (!isExpr1SingleNumber && needParenthesesForLeft(expr1, op)) {
+          leftPart = `(${expr1})`;
+        }
+        
+        if (!isExpr2SingleNumber && needParenthesesForRight(expr2, op)) {
+          rightPart = `(${expr2})`;
+        }
+        
+        return `${leftPart} ${op} ${rightPart}`;
+      }
+      
+      // 标准化表达式以去除重复（处理交换律）
+      function normalizeExpression(expr) {
+        // 简单的标准化：对于加法和乘法，按字典序排序操作数
+        return expr.replace(/(\d+(?:\.\d+)?)\s*([+*])\s*(\d+(?:\.\d+)?)/g, (match, a, op, b) => {
+          if (op === '+' || op === '*') {
+            return parseFloat(a) <= parseFloat(b) ? `${a} ${op} ${b}` : `${b} ${op} ${a}`;
+          }
+          return match;
+        });
+      }
+      
+      // 尝试所有可能的计算方式
+      function tryAllCombinations(nums, expressions) {
+        if (nums.length === 1) {
+          if (isTarget(nums[0])) {
+            const expr = expressions[0];
+            // 验证表达式确实等于24
+            if (verifyExpression(expr)) {
+              solutions.add(expr);
+            }
+          }
+          return;
+        }
+        
+        for (let i = 0; i < nums.length; i++) {
+          for (let j = i + 1; j < nums.length; j++) {
+            const a = nums[i];
+            const b = nums[j];
+            const exprA = expressions[i];
+            const exprB = expressions[j];
+            
+            // 创建新的数组，移除已使用的两个数
+            const newNums = [];
+            const newExprs = [];
+            for (let k = 0; k < nums.length; k++) {
+              if (k !== i && k !== j) {
+                newNums.push(nums[k]);
+                newExprs.push(expressions[k]);
+              }
+            }
+            
+            // 尝试所有运算符
+            for (const op of ops) {
+              const result1 = calculate(a, b, op);
+              const result2 = calculate(b, a, op);
+              
+              if (result1 !== null && !isNaN(result1) && isFinite(result1)) {
+                const expr1 = generateExpression(exprA, exprB, op);
+                tryAllCombinations([...newNums, result1], [...newExprs, expr1]);
+              }
+              
+              // 对于非交换运算，尝试反向
+              if (result2 !== null && !isNaN(result2) && isFinite(result2) && op !== '+' && op !== '*') {
+                const expr2 = generateExpression(exprB, exprA, op);
+                tryAllCombinations([...newNums, result2], [...newExprs, expr2]);
+              }
+            }
+          }
+        }
+      }
+      
+      // 获取所有数字排列
+      const permutations = permute(numbers);
+      
+      // 对每个排列尝试所有可能的计算
+      for (const perm of permutations) {
+        const initialExpressions = perm.map(String);
+        tryAllCombinations(perm, initialExpressions);
+      }
+      
+      // 去重并返回结果
+      const uniqueSolutions = [];
+      const seen = new Set();
+      
+      for (const solution of solutions) {
+        const normalized = normalizeExpression(solution);
+        if (!seen.has(normalized)) {
+          seen.add(normalized);
+          uniqueSolutions.push(solution);
+        }
+      }
+      
+      return uniqueSolutions;
+    }
+    
+    // 初始化游戏
+    init();
+  </script>
+</body>
+</html>

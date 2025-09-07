@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>一笔画</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .info-section {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .info-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 12px 20px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      min-width: 100px;
+    }
+    
+    .info-title {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .info-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .difficulty-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .difficulty-btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .difficulty-btn.active {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+    
+    .game-board {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      position: relative;
+    }
+    
+    #gameGrid {
+      background: rgba(187, 173, 160, 0.4);
+      border-radius: 8px;
+      position: relative;
+      padding: 10px;
+    }
+    
+    .grid-cell {
+      background: rgba(238, 228, 218, 0.35);
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      position: relative;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    
+    .grid-cell.start {
+      background: #50C878;
+      color: white;
+      box-shadow: 0 0 15px rgba(80, 200, 120, 0.5);
+    }
+    
+    .grid-cell.end {
+      background: #ff4d4d;
+      color: white;
+      box-shadow: 0 0 15px rgba(255, 77, 77, 0.5);
+    }
+    
+    .grid-cell.path {
+      background: #667eea;
+      color: white;
+    }
+    
+    .grid-cell.visited {
+      background: #4CAF50;
+      color: white;
+      animation: visited 0.3s ease;
+    }
+    
+    .grid-cell.current {
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    @keyframes visited {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    
+    .line {
+      position: absolute;
+      background: #FFD700;
+      z-index: 5;
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    
+    .new-game-btn {
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .new-game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .new-game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .new-game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .new-game-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    
+    .game-complete {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+    }
+    
+    .game-complete h2 {
+      font-size: 48px;
+      color: #50C878;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px rgba(80, 200, 120, 0.5);
+    }
+    
+    .final-info {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .restart-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #50C878, #32CD32);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(80, 200, 120, 0.4);
+      border: none;
+      cursor: pointer;
+      margin: 0 10px;
+    }
+    
+    .next-btn {
+      padding: 18px 50px;
+      background: linear-gradient(to right, #667eea, #764ba2);
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+      border: none;
+      cursor: pointer;
+      margin: 0 10px;
+    }
+    
+    /* 背景动画 - 参考2048.html */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .info-section {
+        gap: 10px;
+      }
+      
+      .info-box {
+        padding: 8px 15px;
+        min-width: 80px;
+      }
+      
+      .info-title {
+        font-size: 10px;
+      }
+      
+      .info-value {
+        font-size: 16px;
+      }
+      
+      .new-game-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+      }
+      
+      .difficulty-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <!-- 信息区域 -->
+    <div class="info-section">
+      <div class="info-box">
+        <div class="info-title">关卡</div>
+        <div class="info-value" id="level">1</div>
+      </div>
+      
+      <div class="info-box">
+        <div class="info-title">步数</div>
+        <div class="info-value" id="steps">0</div>
+      </div>
+      
+      <div class="info-box">
+        <div class="info-title">最佳</div>
+        <div class="info-value" id="bestSteps">-</div>
+      </div>
+    </div>
+    
+    <!-- 难度选择 -->
+    <div class="difficulty-selector">
+      <button class="difficulty-btn active" data-difficulty="easy">简单</button>
+      <button class="difficulty-btn" data-difficulty="medium">中等</button>
+      <button class="difficulty-btn" data-difficulty="hard">困难</button>
+    </div>
+    
+    <!-- 游戏面板 -->
+    <div class="game-board">
+      <div id="gameGrid"></div>
+    </div>
+    
+    <!-- 新游戏按钮 -->
+    <button class="new-game-btn" id="newGameBtn">新游戏</button>
+  </div>
+  
+  <div class="game-complete" id="gameComplete">
+    <h2>恭喜完成！</h2>
+    <div class="final-info">
+      <div>关卡 <span id="finalLevel">1</span> 完成</div>
+      <div>用时步数: <span id="finalSteps">0</span></div>
+      <div id="newRecord" style="color: #FFD700; display: none;">🎉 新纪录！</div>
+    </div>
+    <div>
+      <button class="next-btn" id="nextBtn">下一关</button>
+      <button class="restart-btn" id="restartBtn">重新开始</button>
+    </div>
+  </div>
+
+  <script>
+    // 游戏状态
+    let currentLevel = 1;
+    let currentDifficulty = 'easy';
+    let steps = 0;
+    let gameGrid = [];
+    let gridSize = { rows: 0, cols: 0 };
+    let startPos = null;
+    let endPos = null;
+    let currentPath = [];
+    let isDrawing = false;
+    let gameCompleted = false;
+    let pathCells = []; // 存储所有路径格子
+    
+    // 触摸相关变量
+    let touchStartCell = null;
+    let lastTouchCell = null;
+    
+    // 难度配置 - 修改为固定6x6网格，难度影响可通行格子数量
+    const difficultyConfig = {
+    easy: { gridSize: 6, pathCells: 20 },    // 简单：20个可通行格子
+    medium: { gridSize: 6, pathCells: 16 },  // 中等：16个可通行格子  
+    hard: { gridSize: 6, pathCells: 12 }     // 困难：12个可通行格子
+    };
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      setupEventListeners();
+      loadProgress();
+      generateLevel();
+    }
+    
+    // 创建动态背景 - 参考2048.html的实现
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        // 随机大小
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        
+        // 随机位置
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        
+        // 随机颜色
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // 随机动画
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 难度选择
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentDifficulty = btn.dataset.difficulty;
+          generateLevel();
+        });
+      });
+      
+      // 按钮事件
+      document.getElementById('newGameBtn').addEventListener('click', generateLevel);
+      document.getElementById('nextBtn').addEventListener('click', nextLevel);
+      document.getElementById('restartBtn').addEventListener('click', generateLevel);
+    }
+    
+    // 生成关卡
+    function generateLevel() {
+      gameCompleted = false;
+      steps = 0;
+      currentPath = [];
+      pathCells = [];
+      document.getElementById('steps').textContent = steps;
+      document.getElementById('gameComplete').style.display = 'none';
+      
+      const config = difficultyConfig[currentDifficulty];
+      // 固定使用6x6网格
+      gridSize = { rows: config.gridSize, cols: config.gridSize };
+      
+      // 生成可解的一笔画路径
+      generateSolvablePath();
+      
+      // 创建网格
+      createGrid();
+      
+      // 更新显示
+      document.getElementById('level').textContent = currentLevel;
+      updateBestSteps();
+    }
+    
+    // 生成可解的一笔画路径 - 修改为基于固定格子数量
+    function generateSolvablePath() {
+      // 初始化6x6网格，全部为障碍
+      gameGrid = Array(6).fill().map(() => Array(6).fill(0));
+      
+      const config = difficultyConfig[currentDifficulty];
+      const targetCells = config.pathCells;
+      
+      // 使用深度优先搜索生成连通路径
+      const path = generateConnectedPath(targetCells);
+      
+      // 在网格中标记路径
+      pathCells = [];
+      for (const pos of path) {
+        gameGrid[pos.row][pos.col] = 1;
+        pathCells.push(pos);
+      }
+      
+      // 设置起点和终点
+      if (path.length > 0) {
+        startPos = path[0];
+        endPos = path[path.length - 1];
+      }
+    }
+    
+    // 生成连通路径 - 确保一笔画可解
+    function generateConnectedPath(targetCells) {
+      const path = [];
+      const visited = new Set();
+      
+      // 随机选择起点
+      const startRow = Math.floor(Math.random() * 6);
+      const startCol = Math.floor(Math.random() * 6);
+      const start = { row: startRow, col: startCol };
+      
+      path.push(start);
+      visited.add(`${start.row},${start.col}`);
+      
+      const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+      
+      // 使用深度优先搜索生成路径
+      function dfs(current, remaining) {
+        if (remaining <= 0) return true;
+        
+        // 随机打乱方向
+        const shuffledDirections = [...directions].sort(() => Math.random() - 0.5);
+        
+        for (const [dr, dc] of shuffledDirections) {
+          const newRow = current.row + dr;
+          const newCol = current.col + dc;
+          const key = `${newRow},${newCol}`;
+          
+          if (newRow >= 0 && newRow < 6 && 
+              newCol >= 0 && newCol < 6 && 
+              !visited.has(key)) {
+            
+            const newPos = { row: newRow, col: newCol };
+            path.push(newPos);
+            visited.add(key);
+            
+            if (dfs(newPos, remaining - 1)) {
+              return true;
+            }
+            
+            // 如果这条路径不行，继续尝试其他方向
+            // 但不回退，保持已生成的路径
+          }
+        }
+        
+        return path.length >= Math.min(targetCells, 8); // 至少生成8个格子
+      }
+      
+      dfs(start, targetCells - 1);
+      
+      // 如果路径太短，补充一些格子
+      if (path.length < targetCells) {
+        // 生成简单的线性路径作为备选
+        return generateLinearPath(targetCells);
+      }
+      
+      return path;
+    }
+    
+    // 生成简单的线性路径作为备选
+    function generateLinearPath(targetCells) {
+      const path = [];
+      
+      let row = 0;
+      let col = 0;
+      let direction = 1; // 1为向右，-1为向左
+      
+      while (path.length < targetCells && row < 6) {
+        // 在当前行添加格子
+        while (col >= 0 && col < 6 && path.length < targetCells) {
+          path.push({ row, col });
+          col += direction;
+        }
+        
+        // 移动到下一行
+        row++;
+        col -= direction; // 回退一步
+        direction *= -1; // 改变方向
+        
+        if (row < 6) {
+          col += direction; // 移动到下一行的起始位置
+        }
+      }
+      
+      return path;
+    }
+    
+    // 创建网格
+    function createGrid() {
+      const gameGridElement = document.getElementById('gameGrid');
+      gameGridElement.innerHTML = '';
+      
+      // 计算网格大小
+      const maxSize = Math.min(350, window.innerWidth - 60);
+      const cellSize = Math.floor(maxSize / Math.max(gridSize.rows, gridSize.cols));
+      const gridWidth = cellSize * gridSize.cols;
+      const gridHeight = cellSize * gridSize.rows;
+      
+      gameGridElement.style.width = `${gridWidth}px`;
+      gameGridElement.style.height = `${gridHeight}px`;
+      gameGridElement.style.display = 'grid';
+      gameGridElement.style.gridTemplateColumns = `repeat(${gridSize.cols}, 1fr)`;
+      gameGridElement.style.gridTemplateRows = `repeat(${gridSize.rows}, 1fr)`;
+      gameGridElement.style.gap = '2px';
+      
+      // 创建格子
+      for (let i = 0; i < gridSize.rows; i++) {
+        for (let j = 0; j < gridSize.cols; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.dataset.row = i;
+          cell.dataset.col = j;
+          
+          if (gameGrid[i][j] === 1) {
+            cell.classList.add('path');
+            
+            if (i === startPos.row && j === startPos.col) {
+              cell.classList.add('start');
+              cell.textContent = '起';
+            } else if (i === endPos.row && j === endPos.col) {
+              cell.classList.add('end');
+              cell.textContent = '终';
+            }
+          }
+          
+          // 添加事件监听器
+          cell.addEventListener('mousedown', handleCellMouseDown);
+          cell.addEventListener('mouseenter', handleCellMouseEnter);
+          cell.addEventListener('mouseup', handleCellMouseUp);
+          
+          // 触摸事件
+          cell.addEventListener('touchstart', handleCellTouchStart, { passive: false });
+          cell.addEventListener('touchmove', handleCellTouchMove, { passive: false });
+          cell.addEventListener('touchend', handleCellTouchEnd, { passive: false });
+          
+          gameGridElement.appendChild(cell);
+        }
+      }
+    }
+    
+    // 鼠标事件处理
+    function handleCellMouseDown(event) {
+      event.preventDefault();
+      const row = parseInt(event.target.dataset.row);
+      const col = parseInt(event.target.dataset.col);
+      
+      if (gameGrid[row][col] === 1 && !gameCompleted) {
+        startDrawing(row, col);
+      }
+    }
+    
+    function handleCellMouseEnter(event) {
+      if (isDrawing && !gameCompleted) {
+        const row = parseInt(event.target.dataset.row);
+        const col = parseInt(event.target.dataset.col);
+        
+        if (gameGrid[row][col] === 1) {
+          addToPath(row, col);
+        }
+      }
+    }
+    
+    function handleCellMouseUp(event) {
+      if (isDrawing) {
+        finishDrawing();
+      }
+    }
+    
+    // 触摸事件处理
+    function handleCellTouchStart(event) {
+      event.preventDefault();
+      const row = parseInt(event.target.dataset.row);
+      const col = parseInt(event.target.dataset.col);
+      
+      if (gameGrid[row][col] === 1 && !gameCompleted) {
+        touchStartCell = { row, col };
+        startDrawing(row, col);
+      }
+    }
+    
+    function handleCellTouchMove(event) {
+      event.preventDefault();
+      
+      if (isDrawing && !gameCompleted && event.touches.length > 0) {
+        const touch = event.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        if (element && element.classList.contains('grid-cell')) {
+          const row = parseInt(element.dataset.row);
+          const col = parseInt(element.dataset.col);
+          
+          if (gameGrid[row][col] === 1 && 
+              (!lastTouchCell || lastTouchCell.row !== row || lastTouchCell.col !== col)) {
+            lastTouchCell = { row, col };
+            addToPath(row, col);
+          }
+        }
+      }
+    }
+    
+    function handleCellTouchEnd(event) {
+      event.preventDefault();
+      
+      if (isDrawing) {
+        finishDrawing();
+      }
+      
+      touchStartCell = null;
+      lastTouchCell = null;
+    }
+    
+    // 开始绘制路径
+    function startDrawing(row, col) {
+      if (gameCompleted) return;
+      
+      isDrawing = true;
+      currentPath = [{ row, col }];
+      
+      // 清除之前的路径显示
+      document.querySelectorAll('.grid-cell').forEach(cell => {
+        cell.classList.remove('visited', 'current');
+      });
+      
+      // 标记当前格子
+      const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      if (cell) {
+        cell.classList.add('current', 'visited');
+      }
+    }
+    
+    // 添加到路径
+    function addToPath(row, col) {
+      if (currentPath.length === 0) return;
+      
+      const lastPos = currentPath[currentPath.length - 1];
+      
+      // 检查是否是相邻格子
+      const distance = Math.abs(row - lastPos.row) + Math.abs(col - lastPos.col);
+      if (distance !== 1) return;
+      
+      // 检查是否已经在路径中
+      const existingIndex = currentPath.findIndex(pos => pos.row === row && pos.col === col);
+      
+      if (existingIndex === -1) {
+        // 新格子，添加到路径
+        currentPath.push({ row, col });
+        
+        // 更新显示
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (cell) {
+          cell.classList.add('visited');
+          
+          // 移除之前的current标记
+          document.querySelectorAll('.current').forEach(c => c.classList.remove('current'));
+          cell.classList.add('current');
+        }
+        
+      } else if (existingIndex === currentPath.length - 2) {
+        // 回退到上一个格子
+        const removedPos = currentPath.pop();
+        const removedCell = document.querySelector(`[data-row="${removedPos.row}"][data-col="${removedPos.col}"]`);
+        if (removedCell) {
+          removedCell.classList.remove('visited', 'current');
+        }
+        
+        // 更新当前格子
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (cell) {
+          document.querySelectorAll('.current').forEach(c => c.classList.remove('current'));
+          cell.classList.add('current');
+        }
+      }
+    }
+    
+    // 完成绘制
+    function finishDrawing() {
+      if (!isDrawing) return;
+      
+      isDrawing = false;
+      
+      // 移除current标记
+      document.querySelectorAll('.current').forEach(cell => {
+        cell.classList.remove('current');
+      });
+      
+      // 检查是否完成游戏
+      if (checkWinCondition()) {
+        gameCompleted = true;
+        showGameComplete();
+      } else {
+        // 清除路径显示
+        setTimeout(() => {
+          document.querySelectorAll('.visited').forEach(cell => {
+            cell.classList.remove('visited');
+          });
+        }, 1000);
+      }
+      
+      // 更新步数
+      steps++;
+      document.getElementById('steps').textContent = steps;
+    }
+    
+    // 检查胜利条件
+    function checkWinCondition() {
+      // 检查路径长度是否匹配
+      if (currentPath.length !== pathCells.length) {
+        return false;
+      }
+      
+      // 检查是否所有路径格子都被访问
+      for (const pathCell of pathCells) {
+        const found = currentPath.some(pos => 
+          pos.row === pathCell.row && pos.col === pathCell.col
+        );
+        if (!found) {
+          return false;
+        }
+      }
+      
+      // 检查路径的连续性
+      for (let i = 1; i < currentPath.length; i++) {
+        const prev = currentPath[i - 1];
+        const curr = currentPath[i];
+        const distance = Math.abs(curr.row - prev.row) + Math.abs(curr.col - prev.col);
+        if (distance !== 1) {
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    // 显示游戏完成
+    function showGameComplete() {
+      document.getElementById('finalLevel').textContent = currentLevel;
+      document.getElementById('finalSteps').textContent = steps;
+      
+      // 检查是否是新纪录
+      const bestKey = `oneline-best-${currentDifficulty}-${currentLevel}`;
+      const currentBest = localStorage.getItem(bestKey);
+      
+      if (!currentBest || steps < parseInt(currentBest)) {
+        localStorage.setItem(bestKey, steps.toString());
+        document.getElementById('newRecord').style.display = 'block';
+      } else {
+        document.getElementById('newRecord').style.display = 'none';
+      }
+      
+      document.getElementById('gameComplete').style.display = 'flex';
+    }
+    
+    // 下一关
+    function nextLevel() {
+      currentLevel++;
+      saveProgress();
+      generateLevel();
+      document.getElementById('gameComplete').style.display = 'none';
+    }
+    
+    // 更新最佳步数显示
+    function updateBestSteps() {
+      const bestKey = `oneline-best-${currentDifficulty}-${currentLevel}`;
+      const best = localStorage.getItem(bestKey);
+      document.getElementById('bestSteps').textContent = best || '-';
+    }
+    
+    // 保存进度
+    function saveProgress() {
+      localStorage.setItem('oneline-level', currentLevel.toString());
+      localStorage.setItem('oneline-difficulty', currentDifficulty);
+    }
+    
+    // 加载进度
+    function loadProgress() {
+      const savedLevel = localStorage.getItem('oneline-level');
+      const savedDifficulty = localStorage.getItem('oneline-difficulty');
+      
+      if (savedLevel) {
+        currentLevel = parseInt(savedLevel);
+        document.getElementById('level').textContent = currentLevel;
+      }
+      
+      if (savedDifficulty) {
+        currentDifficulty = savedDifficulty;
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.difficulty === currentDifficulty);
+        });
+      }
+      
+      updateBestSteps();
+    }
+    
+    // 全局鼠标事件（用于处理拖拽结束）
+    document.addEventListener('mouseup', () => {
+      if (isDrawing) {
+        finishDrawing();
+      }
+    });
+    
+    // 防止页面滚动
+    document.addEventListener('touchmove', (e) => {
+      if (e.target.closest('#gameGrid')) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+    
+    // 初始化游戏
+    init();
+  </script>
+</body>
+</html>

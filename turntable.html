@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>大转盘</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      max-height: 100vh;
+      padding: 20px;
+    }
+    
+    .score-section {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .score-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 15px 25px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      min-width: 120px;
+    }
+    
+    .score-title {
+      font-size: 14px;
+      color: #a0a0a0;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .score-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .turntable-container {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .turntable-wrapper {
+      position: relative;
+      width: 300px;
+      height: 300px;
+    }
+    
+    .pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 30px solid #ff4d4d;
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+    
+    .turntable {
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      position: relative;
+      border: 8px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 
+        0 0 0 4px rgba(0, 0, 0, 0.2),
+        0 8px 25px rgba(0, 0, 0, 0.4),
+        inset 0 0 20px rgba(0, 0, 0, 0.1);
+      transition: transform 3s cubic-bezier(0.23, 1, 0.32, 1);
+      overflow: hidden;
+    }
+    
+    .sector {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      top: 50%;
+      left: 50%;
+      transform-origin: 0 0;
+      overflow: hidden;
+    }
+    
+    .sector::before {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      border-radius: 50%;
+      transform: rotate(20deg);
+      transform-origin: 0 0;
+    }
+    
+    .sector-1 {
+      transform: rotate(0deg);
+    }
+    .sector-1::before {
+      background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    }
+    
+    .sector-2 {
+      transform: rotate(40deg);
+    }
+    .sector-2::before {
+      background: linear-gradient(135deg, #4ecdc4, #26a69a);
+    }
+    
+    .sector-3 {
+      transform: rotate(80deg);
+    }
+    .sector-3::before {
+      background: linear-gradient(135deg, #45b7d1, #2196f3);
+    }
+    
+    .sector-4 {
+      transform: rotate(120deg);
+    }
+    .sector-4::before {
+      background: linear-gradient(135deg, #96ceb4, #66bb6a);
+    }
+    
+    .sector-5 {
+      transform: rotate(160deg);
+    }
+    .sector-5::before {
+      background: linear-gradient(135deg, #feca57, #ffb74d);
+    }
+    
+    .sector-6 {
+      transform: rotate(200deg);
+    }
+    .sector-6::before {
+      background: linear-gradient(135deg, #ff9ff3, #e91e63);
+    }
+    
+    .sector-7 {
+      transform: rotate(240deg);
+    }
+    .sector-7::before {
+      background: linear-gradient(135deg, #54a0ff, #3f51b5);
+    }
+    
+    .sector-8 {
+      transform: rotate(280deg);
+    }
+    .sector-8::before {
+      background: linear-gradient(135deg, #5f27cd, #673ab7);
+    }
+    
+    .sector-9 {
+      transform: rotate(320deg);
+    }
+    .sector-9::before {
+      background: linear-gradient(135deg, #00d2d3, #00bcd4);
+    }
+    
+    .sector-number {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+      z-index: 5;
+    }
+    
+    .go-button {
+      padding: 20px 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      min-width: 120px;
+    }
+    
+    .go-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    .go-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .go-button:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .go-button:hover:not(:disabled)::before {
+      left: 100%;
+    }
+    
+    .go-button:active:not(:disabled) {
+      transform: translateY(-1px) scale(0.98);
+      box-shadow: 
+        0 6px 20px rgba(102, 126, 234, 0.4),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    }
+    
+    /* 弹窗样式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transform: scale(0.7) translateY(50px);
+      transition: all 0.3s ease;
+      max-width: 90%;
+      min-width: 300px;
+    }
+    
+    .modal-overlay.show .modal {
+      transform: scale(1) translateY(0);
+    }
+    
+    .modal-title {
+      font-size: 24px;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .modal-result {
+      font-size: 72px;
+      font-weight: bold;
+      color: #feca57;
+      text-shadow: 
+        0 0 20px rgba(254, 202, 87, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+      margin: 20px 0;
+      animation: resultPulse 1s ease-in-out;
+    }
+    
+    @keyframes resultPulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+    
+    .modal-close {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 12px 30px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    /* 移动端适配 */
+    @media (max-width: 480px) {
+      .game-container {
+        gap: 15px;
+        padding: 15px;
+      }
+      
+      .score-section {
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .score-box {
+        min-width: 100px;
+        padding: 12px 20px;
+      }
+      
+      .score-title {
+        font-size: 12px;
+      }
+      
+      .score-value {
+        font-size: 24px;
+      }
+      
+      .turntable-wrapper {
+        width: 250px;
+        height: 250px;
+      }
+      
+      .turntable {
+        width: 250px;
+        height: 250px;
+      }
+      
+      .sector-number {
+        font-size: 26px;
+        top: 15px;
+      }
+      
+      .go-button {
+        padding: 15px 40px;
+        font-size: 20px;
+      }
+      
+      .modal {
+        padding: 30px;
+        min-width: 280px;
+      }
+      
+      .modal-result {
+        font-size: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <!-- 分数区域 -->
+    <div class="score-section">
+      <div class="score-box">
+        <div class="score-title">转盘次数</div>
+        <div class="score-value" id="spinCount">0</div>
+      </div>
+      
+      <div class="score-box">
+        <div class="score-title">幸运数字</div>
+        <div class="score-value" id="luckyNumber">-</div>
+      </div>
+    </div>
+    
+    <!-- 转盘容器 -->
+    <div class="turntable-container">
+      <div class="turntable-wrapper">
+        <div class="pointer"></div>
+        <div class="turntable" id="turntable">
+          <div class="sector sector-1">
+            <div class="sector-number">1</div>
+          </div>
+          <div class="sector sector-2">
+            <div class="sector-number">2</div>
+          </div>
+          <div class="sector sector-3">
+            <div class="sector-number">3</div>
+          </div>
+          <div class="sector sector-4">
+            <div class="sector-number">4</div>
+          </div>
+          <div class="sector sector-5">
+            <div class="sector-number">5</div>
+          </div>
+          <div class="sector sector-6">
+            <div class="sector-number">6</div>
+          </div>
+          <div class="sector sector-7">
+            <div class="sector-number">7</div>
+          </div>
+          <div class="sector sector-8">
+            <div class="sector-number">8</div>
+          </div>
+          <div class="sector sector-9">
+            <div class="sector-number">9</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- GO按钮 -->
+      <button class="go-button" id="goButton">GO</button>
+    </div>
+  </div>
+  
+  <!-- 结果弹窗 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-title">🎉 恭喜您！</div>
+      <div class="modal-result" id="modalResult">1</div>
+      <button class="modal-close" id="modalClose">确定</button>
+    </div>
+  </div>
+
+  <script>
+    // 游戏状态
+    let spinCount = 0;
+    let isSpinning = false;
+    
+    // 数字对应的角度（指针指向扇形的中心角度）
+    const numberAngles = {
+      1: 20,   // 第1个扇形中心
+      2: 60,   // 第2个扇形中心
+      3: 100,  // 第3个扇形中心
+      4: 140,  // 第4个扇形中心
+      5: 180,  // 第5个扇形中心
+      6: 220,  // 第6个扇形中心
+      7: 260,  // 第7个扇形中心
+      8: 300,  // 第8个扇形中心
+      9: 340   // 第9个扇形中心
+    };
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      setupEventListeners();
+      loadGameData();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        // 随机大小
+        const size = Math.random() * 100 + 50;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        
+        // 随机位置
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        
+        // 随机颜色
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // 随机动画
+        shape.style.animationDuration = `${Math.random() * 30 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      document.getElementById('goButton').addEventListener('click', spinTurntable);
+      document.getElementById('modalClose').addEventListener('click', closeModal);
+      document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeModal();
+        }
+      });
+      
+      // 触摸事件优化
+      document.getElementById('goButton').addEventListener('touchstart', function(e) {
+        e.preventDefault();
+      });
+    }
+    
+    // 转动转盘
+    function spinTurntable() {
+      if (isSpinning) return;
+      
+      isSpinning = true;
+      const goButton = document.getElementById('goButton');
+      const turntable = document.getElementById('turntable');
+      
+      // 禁用按钮
+      goButton.disabled = true;
+      goButton.textContent = '转动中...';
+      
+      // 生成随机结果（1-9）
+      const resultNumber = Math.floor(Math.random() * 9) + 1;
+      
+      // 计算目标角度 - 指针指向扇形中心
+      const targetAngle = numberAngles[resultNumber];
+      
+      // 重置转盘到初始位置，然后添加多圈旋转
+      const extraRotations = 1440 + Math.random() * 720; // 4-6圈
+      const finalRotation = extraRotations + (360 - targetAngle);
+      
+      // 重置转盘位置
+      turntable.style.transition = 'none';
+      turntable.style.transform = 'rotate(0deg)';
+      
+      // 强制重绘
+      turntable.offsetHeight;
+      
+      // 开始旋转
+      turntable.style.transition = 'transform 3s cubic-bezier(0.23, 1, 0.32, 1)';
+      turntable.style.transform = `rotate(${finalRotation}deg)`;
+      
+      // 旋转结束后显示结果
+      setTimeout(() => {
+        isSpinning = false;
+        
+        // 更新计数
+        spinCount++;
+        document.getElementById('spinCount').textContent = spinCount;
+        document.getElementById('luckyNumber').textContent = resultNumber;
+        
+        // 显示结果弹窗
+        showResultModal(resultNumber);
+        
+        // 恢复按钮
+        goButton.disabled = false;
+        goButton.textContent = 'GO';
+        
+        // 保存游戏数据
+        saveGameData();
+        
+      }, 3000); // 3秒旋转时间
+    }
+    
+    // 显示结果弹窗
+    function showResultModal(number) {
+      const modalOverlay = document.getElementById('modalOverlay');
+      const modalResult = document.getElementById('modalResult');
+      
+      modalResult.textContent = number;
+      modalOverlay.classList.add('show');
+    }
+    
+    // 关闭弹窗
+    function closeModal() {
+      const modalOverlay = document.getElementById('modalOverlay');
+      modalOverlay.classList.remove('show');
+    }
+    
+    // 保存游戏数据
+    function saveGameData() {
+      const gameData = {
+        spinCount: spinCount,
+        lastPlayed: Date.now()
+      };
+      localStorage.setItem('turntableGame', JSON.stringify(gameData));
+    }
+    
+    // 加载游戏数据
+    function loadGameData() {
+      const savedData = localStorage.getItem('turntableGame');
+      if (savedData) {
+        const gameData = JSON.parse(savedData);
+        spinCount = gameData.spinCount || 0;
+        document.getElementById('spinCount').textContent = spinCount;
+      }
+    }
+    
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

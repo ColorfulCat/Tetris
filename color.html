@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>色彩感知挑战</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2, #667eea);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
+      padding: 10px;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 15px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 
+        0 8px 32px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    
+    .score-section {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    
+    .score-box {
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+      backdrop-filter: blur(15px);
+      border-radius: 16px;
+      padding: 15px 20px;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(0,0,0,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        0 0 20px rgba(255,255,255,0.1);
+      min-width: 110px;
+      border: 1px solid rgba(255,255,255,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .score-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 2s ease;
+    }
+    
+    .score-box:hover::before {
+      left: 100%;
+    }
+    
+    .score-title {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .score-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 
+        0 2px 4px rgba(0,0,0,0.3),
+        0 0 10px rgba(255,255,255,0.3);
+      background: linear-gradient(135deg, #fff, #e0e0e0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .level-info {
+      background: linear-gradient(135deg, rgba(80,200,120,0.3), rgba(80,200,120,0.1));
+      backdrop-filter: blur(15px);
+      border-radius: 16px;
+      padding: 15px 20px;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(80,200,120,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        0 0 20px rgba(80,200,120,0.2);
+      border: 1px solid rgba(80,200,120,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .level-info::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(80,200,120,0.2), transparent);
+      transition: left 2s ease;
+    }
+    
+    .level-info:hover::before {
+      left: 100%;
+    }
+    
+    .level-title {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .level-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #50C878;
+      text-shadow: 
+        0 2px 4px rgba(0,0,0,0.3),
+        0 0 15px rgba(80,200,120,0.6);
+    }
+    
+    .timer {
+      background: linear-gradient(135deg, rgba(255,193,7,0.3), rgba(255,193,7,0.1));
+      backdrop-filter: blur(15px);
+      border-radius: 16px;
+      padding: 15px 20px;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(255,193,7,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.3),
+        0 0 20px rgba(255,193,7,0.2);
+      border: 1px solid rgba(255,193,7,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .timer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,193,7,0.2), transparent);
+      transition: left 2s ease;
+    }
+    
+    .timer:hover::before {
+      left: 100%;
+    }
+    
+    .timer-title {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .timer-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #FFC107;
+      text-shadow: 
+        0 2px 4px rgba(0,0,0,0.3),
+        0 0 15px rgba(255,193,7,0.6);
+    }
+    
+    .game-board {
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 
+        0 12px 35px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+      padding: 20px;
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    #colorGrid {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, rgba(187, 173, 160, 0.6), rgba(187, 173, 160, 0.3));
+      border-radius: 12px;
+      position: relative;
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .color-cell {
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .color-cell:active {
+      transform: scale(0.95);
+    }
+    
+    .color-cell.correct {
+      animation: correctPulse 0.6s ease;
+    }
+    
+    .color-cell.wrong {
+      animation: wrongShake 0.5s ease;
+    }
+    
+    @keyframes correctPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); box-shadow: 0 0 25px #50C878; }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes wrongShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    .new-game-btn {
+      padding: 15px 35px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .new-game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .new-game-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 12px 35px rgba(102, 126, 234, 0.6),
+        inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+    
+    .new-game-btn:hover::before {
+      left: 100%;
+    }
+    
+    .new-game-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    
+    .game-over, .level-complete, .confirm-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      display: none;
+      padding: 20px;
+      backdrop-filter: blur(5px);
+    }
+    
+    .modal-content {
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      backdrop-filter: blur(20px);
+      border-radius: 25px;
+      padding: 35px;
+      text-align: center;
+      max-width: 380px;
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 
+        0 20px 50px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    
+    .modal-title {
+      font-size: 32px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 15px currentColor;
+      font-weight: 700;
+    }
+    
+    .game-over .modal-title {
+      color: #ff4d4d;
+    }
+    
+    .level-complete .modal-title {
+      color: #50C878;
+    }
+    
+    .confirm-modal .modal-title {
+      color: #FFC107;
+    }
+    
+    .modal-info {
+      font-size: 18px;
+      margin-bottom: 25px;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.5;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .modal-btn {
+      padding: 14px 28px;
+      border-radius: 22px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .restart-btn {
+      background: linear-gradient(to right, #ff416c, #ff4b2b);
+      box-shadow: 0 6px 20px rgba(255, 75, 43, 0.4);
+    }
+    
+    .continue-btn {
+      background: linear-gradient(to right, #50C878, #32CD32);
+      box-shadow: 0 6px 20px rgba(80, 200, 120, 0.4);
+    }
+    
+    .confirm-btn {
+      background: linear-gradient(to right, #FFC107, #FF8F00);
+      box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+    }
+    
+    .cancel-btn {
+      background: linear-gradient(to right, #6c757d, #495057);
+      box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    }
+    
+    .modal-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      animation: float 20s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .header-section {
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 15px;
+        flex-wrap: nowrap;
+      }
+      
+      .score-section {
+        justify-content: flex-start;
+        gap: 10px;
+        flex: 1;
+      }
+      
+      .score-box, .level-info, .timer {
+        min-width: 75px;
+        padding: 10px 12px;
+        flex: 1;
+      }
+      
+      .score-value, .level-value, .timer-value {
+        font-size: 16px;
+      }
+      
+      .score-title, .level-title, .timer-title {
+        font-size: 11px;
+      }
+      
+      .modal-content {
+        padding: 25px;
+        margin: 15px;
+      }
+      
+      .modal-title {
+        font-size: 28px;
+      }
+      
+      .modal-buttons {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .modal-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="game-container">
+    <div class="header-section">
+      <div class="score-section">
+        <div class="score-box">
+          <div class="score-title">分数</div>
+          <div class="score-value" id="score">0</div>
+        </div>
+        
+        <div class="score-box">
+          <div class="score-title">最高分</div>
+          <div class="score-value" id="highScore">0</div>
+        </div>
+      </div>
+      
+      <div class="level-info">
+        <div class="level-title">关卡</div>
+        <div class="level-value" id="level">1</div>
+      </div>
+      
+      <div class="timer">
+        <div class="timer-title">时间</div>
+        <div class="timer-value" id="timer">0</div>
+      </div>
+    </div>
+    
+    <div class="game-board">
+      <div id="colorGrid"></div>
+    </div>
+    
+    <button class="new-game-btn" id="newGameBtn">新游戏</button>
+  </div>
+  
+  <div class="level-complete" id="levelComplete">
+    <div class="modal-content">
+      <h2 class="modal-title">关卡完成!</h2>
+      <div class="modal-info" id="levelInfo">恭喜通过第1关!</div>
+      <div class="modal-buttons">
+        <button class="modal-btn continue-btn" id="nextLevelBtn">下一关</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="game-over" id="gameOver">
+    <div class="modal-content">
+      <h2 class="modal-title">游戏结束!</h2>
+      <div class="modal-info" id="gameOverInfo">点击了错误的色块!</div>
+      <div class="modal-buttons">
+        <button class="modal-btn restart-btn" id="restartBtn">重新开始</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="confirm-modal" id="confirmModal">
+    <div class="modal-content">
+      <h2 class="modal-title">确认重新开始</h2>
+      <div class="modal-info">确定要开始新游戏吗？当前进度将会丢失。</div>
+      <div class="modal-buttons">
+        <button class="modal-btn confirm-btn" id="confirmNewGameBtn">确认</button>
+        <button class="modal-btn cancel-btn" id="cancelNewGameBtn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 游戏状态
+    let currentLevel = 1;
+    let score = 0;
+    let highScore = 0;
+    let gameStartTime = 0;
+    let timerInterval = null;
+    let correctCellIndex = 0;
+    
+    // 关卡配置 - 护眼的低饱和度柔和色彩
+    const levelConfig = [
+      // 第1-3关: 3x3, 柔和的暖色调
+      { size: 3, colorDiff: 20, baseColors: ['#D4C5B9', '#C8B5A6', '#B8A082'] },
+      { size: 3, colorDiff: 19, baseColors: ['#C9D6C5', '#B5C2B1', '#A8B5A2'] },
+      { size: 3, colorDiff: 18, baseColors: ['#C5D1D4', '#B1BEC2', '#A2B0B5'] },
+      
+      // 第4-6关: 4x4, 柔和的中性色调
+      { size: 4, colorDiff: 16, baseColors: ['#D1C5D4', '#BEB1C2', '#B0A2B5'] },
+      { size: 4, colorDiff: 15, baseColors: ['#D4D1C5', '#C2BEB1', '#B5B0A2'] },
+      { size: 4, colorDiff: 14, baseColors: ['#C5D4D1', '#B1C2BE', '#A2B5B0'] },
+      
+      // 第7-9关: 5x5, 更柔和的色调
+      { size: 5, colorDiff: 13, baseColors: ['#D6D4C5', '#C3C1B1', '#B6B4A2'] },
+      { size: 5, colorDiff: 12, baseColors: ['#C5D6D4', '#B1C3C1', '#A2B6B4'] },
+      { size: 5, colorDiff: 11, baseColors: ['#D4C5D6', '#C1B1C3', '#B4A2B6'] },
+      
+      // 第10-12关: 6x6, 极柔和色调
+      { size: 6, colorDiff: 10, baseColors: ['#D2D0C8', '#BFBDB5', '#B2B0A8'] },
+      { size: 6, colorDiff: 9, baseColors: ['#C8D2D0', '#B5BFBD', '#A8B2B0'] },
+      { size: 6, colorDiff: 8, baseColors: ['#D0C8D2', '#BDB5BF', '#B0A8B2'] },
+      
+      // 第13-15关: 7x7, 非常柔和
+      { size: 7, colorDiff: 7, baseColors: ['#CFCDCB', '#BCBAB8', '#AFADA5'] },
+      { size: 7, colorDiff: 6, baseColors: ['#CBCFCD', '#B8BCBA', '#A5AFAD'] },
+      { size: 7, colorDiff: 5, baseColors: ['#CDCBCF', '#BABCB8', '#ADAFA5'] },
+      
+      // 第16-18关: 8x8, 极其柔和
+      { size: 8, colorDiff: 3, baseColors: ['#CECCCB', '#BBBAB8', '#AEADA5'] },
+      { size: 8, colorDiff: 2, baseColors: ['#CBCECC', '#B8BBBA', '#A5AEAD'] },
+      { size: 8, colorDiff: 1, baseColors: ['#CCCBCE', '#BABBB8', '#ADAEA5'] }
+    ];
+    
+    // 初始化游戏
+    function init() {
+      createBackground();
+      loadHighScore();
+      setupEventListeners();
+      startNewGame();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const colors = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'];
+      
+      for (let i = 0; i < 15; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        const size = Math.random() * 80 + 40;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        shape.style.animationDuration = `${Math.random() * 25 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      document.getElementById('newGameBtn').addEventListener('click', showConfirmModal);
+      document.getElementById('confirmNewGameBtn').addEventListener('click', confirmNewGame);
+      document.getElementById('cancelNewGameBtn').addEventListener('click', hideConfirmModal);
+      document.getElementById('nextLevelBtn').addEventListener('click', nextLevel);
+      document.getElementById('restartBtn').addEventListener('click', startNewGame);
+    }
+    
+    // 显示确认弹窗
+    function showConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'flex';
+    }
+    
+    // 隐藏确认弹窗
+    function hideConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+    }
+    
+    // 确认新游戏
+    function confirmNewGame() {
+      hideConfirmModal();
+      startNewGame();
+    }
+    
+    // 开始新游戏
+    function startNewGame() {
+      currentLevel = 1;
+      score = 0;
+      updateDisplay();
+      hideModals();
+      startLevel();
+    }
+    
+    // 开始关卡
+    function startLevel() {
+      if (currentLevel > levelConfig.length) {
+        gameComplete();
+        return;
+      }
+      
+      gameStartTime = Date.now();
+      startTimer();
+      generateLevel();
+    }
+    
+    // 生成关卡
+    function generateLevel() {
+      const config = levelConfig[currentLevel - 1];
+      const grid = document.getElementById('colorGrid');
+      
+      // 设置网格大小
+      grid.style.gridTemplateColumns = `repeat(${config.size}, 1fr)`;
+      grid.style.gridTemplateRows = `repeat(${config.size}, 1fr)`;
+      
+      // 清空网格
+      grid.innerHTML = '';
+      
+      // 选择基础颜色
+      const baseColorIndex = (currentLevel - 1) % 3;
+      const baseColor = config.baseColors[baseColorIndex];
+      
+      // 生成颜色
+      const normalColor = baseColor;
+      const specialColor = adjustColor(baseColor, config.colorDiff);
+      
+      // 随机选择特殊方块位置
+      const totalCells = config.size * config.size;
+      correctCellIndex = Math.floor(Math.random() * totalCells);
+      
+      // 创建方块
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'color-cell';
+        cell.style.backgroundColor = i === correctCellIndex ? specialColor : normalColor;
+        cell.addEventListener('click', () => handleCellClick(i));
+        grid.appendChild(cell);
+      }
+    }
+    
+    // 调整颜色 - 针对低饱和度色彩的精确调整
+    function adjustColor(hexColor, diff) {
+      const hex = hexColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      // 对于低饱和度色彩，使用更精细的调整
+      const adjustValue = (val, diff) => {
+        // 随机选择调整方向，但确保在合理范围内
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        const adjustment = diff * (0.9 + Math.random() * 0.2); // 80%-120%的差异
+        const newVal = val + (direction * adjustment);
+        return Math.max(50, Math.min(220, newVal)); // 限制在50-220范围内，避免过暗或过亮
+      };
+      
+      const newR = adjustValue(r, diff);
+      const newG = adjustValue(g, diff * 0.9); // 绿色调整幅度稍小
+      const newB = adjustValue(b, diff);
+      
+      return `rgb(${Math.round(newR)}, ${Math.round(newG)}, ${Math.round(newB)})`;
+    }
+    
+    // 处理方块点击 - 修改为点错即失败
+    function handleCellClick(index) {
+      const cells = document.querySelectorAll('.color-cell');
+      const clickedCell = cells[index];
+      
+      if (index === correctCellIndex) {
+        // 正确答案
+        clickedCell.classList.add('correct');
+        const timeBonus = Math.max(0, 30 - Math.floor((Date.now() - gameStartTime) / 1000));
+        const levelBonus = currentLevel;
+        score += 10 + timeBonus * 2 + levelBonus;
+        
+        setTimeout(() => {
+          levelComplete();
+        }, 500);
+      } else {
+        // 错误答案 - 直接游戏失败
+        clickedCell.classList.add('wrong');
+        
+        setTimeout(() => {
+          gameOver();
+        }, 500);
+      }
+    }
+    
+    // 游戏失败
+    function gameOver() {
+      stopTimer();
+      updateHighScore();
+      
+      const modal = document.getElementById('gameOver');
+      const info = document.getElementById('gameOverInfo');
+      
+      info.textContent = `游戏失败! 第${currentLevel}关 - 最终分数: ${score}`;
+      modal.style.display = 'flex';
+    }
+    
+    // 关卡完成
+    function levelComplete() {
+      stopTimer();
+      updateHighScore();
+      
+      const modal = document.getElementById('levelComplete');
+      const info = document.getElementById('levelInfo');
+      const timeSpent = Math.floor((Date.now() - gameStartTime) / 1000);
+      
+      info.textContent = `恭喜通过第${currentLevel}关! 用时: ${timeSpent}秒`;
+      modal.style.display = 'flex';
+    }
+    
+    // 下一关
+    function nextLevel() {
+      currentLevel++;
+      hideModals();
+      updateDisplay();
+      startLevel();
+    }
+    
+    // 游戏完成
+    function gameComplete() {
+      stopTimer();
+      updateHighScore();
+      
+      const modal = document.getElementById('gameOver');
+      const info = document.getElementById('gameOverInfo');
+      
+      info.textContent = `恭喜完成所有${levelConfig.length}关! 最终分数: ${score}`;
+      modal.style.display = 'flex';
+    }
+    
+    // 开始计时器
+    function startTimer() {
+      stopTimer();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+        document.getElementById('timer').textContent = elapsed;
+      }, 1000);
+    }
+    
+    // 停止计时器
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+    
+    // 更新显示
+    function updateDisplay() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('level').textContent = currentLevel;
+      document.getElementById('highScore').textContent = highScore;
+    }
+    
+    // 更新最高分
+    function updateHighScore() {
+      if (score > highScore) {
+        highScore = score;
+        saveHighScore();
+      }
+    }
+    
+    // 保存最高分
+    function saveHighScore() {
+      localStorage.setItem('colorGameHighScore', highScore.toString());
+    }
+    
+    // 加载最高分
+    function loadHighScore() {
+      const saved = localStorage.getItem('colorGameHighScore');
+      highScore = saved ? parseInt(saved) : 0;
+    }
+    
+    // 隐藏模态框
+    function hideModals() {
+      document.getElementById('levelComplete').style.display = 'none';
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('confirmModal').style.display = 'none';
+    }
+    
+    // 启动游戏
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
