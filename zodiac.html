@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>星座查询</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2, #667eea);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
+      padding: 20px 10px;
+    }
+    
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    
+    .title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(45deg, #fff, #f0f0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      color: #e0e0e0;
+      opacity: 0.9;
+    }
+    
+    .query-section {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      width: 100%;
+      position: relative;
+    }
+    
+    .tab-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .tab-btn {
+      flex: 1;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .input-group {
+      margin-bottom: 15px;
+    }
+    
+    .input-label {
+      display: block;
+      font-size: 14px;
+      color: #e0e0e0;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: #667eea;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .date-inputs {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .date-inputs .input-field {
+      flex: 1;
+    }
+    
+    .constellation-select {
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .constellation-select:focus {
+      outline: none;
+      border-color: #667eea;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    
+    .constellation-select option {
+      background: #333;
+      color: white;
+    }
+    
+    .query-btn {
+      width: 100%;
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      box-shadow: 
+        0 8px 25px rgba(102, 126, 234, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .query-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .query-btn:hover::before {
+      left: 100%;
+    }
+    
+    .query-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .result-section {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      width: 100%;
+      display: none;
+    }
+    
+    .constellation-card {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      border-radius: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .constellation-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    
+    .constellation-name {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    
+    .constellation-date {
+      font-size: 16px;
+      color: #e0e0e0;
+      margin-bottom: 15px;
+    }
+    
+    .constellation-element {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      font-size: 14px;
+      margin: 0 5px;
+    }
+    
+    .detail-section {
+      margin-top: 20px;
+    }
+    
+    .detail-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #667eea;
+    }
+    
+    .detail-content {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #e0e0e0;
+      text-align: left;
+    }
+    
+    .traits-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .trait-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .trait-label {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .trait-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    /* 背景动画 */
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+      animation: float 20s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+      }
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .app-container {
+        max-width: 100%;
+        padding: 0 10px;
+      }
+      
+      .title {
+        font-size: 28px;
+      }
+      
+      .constellation-icon {
+        font-size: 40px;
+      }
+      
+      .constellation-name {
+        font-size: 24px;
+      }
+      
+      .traits-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background" id="background"></div>
+  
+  <div class="app-container">
+    <div class="header">
+      <h1 class="title">✨ 星座查询 ✨</h1>
+      <p class="subtitle">探索你的星座奥秘</p>
+    </div>
+    
+    <div class="query-section">
+      <div class="tab-buttons">
+        <button class="tab-btn active" id="dateTab">日期查星座</button>
+        <button class="tab-btn" id="constellationTab">星座查日期</button>
+      </div>
+      
+      <div id="dateQuery">
+        <div class="input-group">
+          <label class="input-label">请输入您的出生日期</label>
+          <div class="date-inputs">
+            <input type="number" class="input-field" id="month" placeholder="月份" min="1" max="12">
+            <input type="number" class="input-field" id="day" placeholder="日期" min="1" max="31">
+          </div>
+        </div>
+        <button class="query-btn" id="queryByDate">查询星座</button>
+      </div>
+      
+      <div id="constellationQuery" class="hidden">
+        <div class="input-group">
+          <label class="input-label">请选择星座</label>
+          <select class="constellation-select" id="constellationSelect">
+            <option value="">请选择星座</option>
+            <option value="白羊座">白羊座 ♈</option>
+            <option value="金牛座">金牛座 ♉</option>
+            <option value="双子座">双子座 ♊</option>
+            <option value="巨蟹座">巨蟹座 ♋</option>
+            <option value="狮子座">狮子座 ♌</option>
+            <option value="处女座">处女座 ♍</option>
+            <option value="天秤座">天秤座 ♎</option>
+            <option value="天蝎座">天蝎座 ♏</option>
+            <option value="射手座">射手座 ♐</option>
+            <option value="摩羯座">摩羯座 ♑</option>
+            <option value="水瓶座">水瓶座 ♒</option>
+            <option value="双鱼座">双鱼座 ♓</option>
+          </select>
+        </div>
+        <button class="query-btn" id="queryByConstellation">查询日期</button>
+      </div>
+    </div>
+    
+    <div class="result-section" id="resultSection">
+      <div class="constellation-card" id="constellationCard">
+        <span class="constellation-icon" id="constellationIcon">♈</span>
+        <div class="constellation-name" id="constellationName">白羊座</div>
+        <div class="constellation-date" id="constellationDate">3月21日 - 4月19日</div>
+        <div>
+          <span class="constellation-element" id="constellationElement">火象星座</span>
+          <span class="constellation-element" id="constellationRuler">火星守护</span>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <div class="detail-title">性格特点</div>
+        <div class="detail-content" id="personalityContent">
+          白羊座的人热情冲动、爱冒险、慷慨、天不怕地不怕，而且一旦下定决心，不到黄河心不死，排除万难的要达到目的。
+        </div>
+      </div>
+      
+      <div class="traits-grid">
+        <div class="trait-item">
+          <div class="trait-label">幸运数字</div>
+          <div class="trait-value" id="luckyNumber">6, 7</div>
+        </div>
+        <div class="trait-item">
+          <div class="trait-label">幸运颜色</div>
+          <div class="trait-value" id="luckyColor">鲜红色</div>
+        </div>
+        <div class="trait-item">
+          <div class="trait-label">幸运石</div>
+          <div class="trait-value" id="luckyStone">红宝石</div>
+        </div>
+        <div class="trait-item">
+          <div class="trait-label">配对星座</div>
+          <div class="trait-value" id="matchConstellation">狮子座</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 星座数据
+    const constellationData = {
+      '白羊座': {
+        icon: '♈',
+        dateRange: '3月21日 - 4月19日',
+        element: '火象星座',
+        ruler: '火星守护',
+        personality: '白羊座的人热情冲动、爱冒险、慷慨、天不怕地不怕，而且一旦下定决心，不到黄河心不死，排除万难的要达到目的。大部分属于白羊座的人的脾气都很差，不过只是炮仗颈，绝对不会放在心上，很快便会没有事，而记仇的天蝎座便正好是白羊座的相反。',
+        luckyNumber: '6, 7',
+        luckyColor: '鲜红色',
+        luckyStone: '红宝石',
+        match: '狮子座',
+        startMonth: 3,
+        startDay: 21,
+        endMonth: 4,
+        endDay: 19
+      },
+      '金牛座': {
+        icon: '♉',
+        dateRange: '4月20日 - 5月20日',
+        element: '土象星座',
+        ruler: '金星守护',
+        personality: '金牛座是很保守的星座，喜欢稳定，不爱变动。在性格上则比较慢热，对工作、生活、环境都需要比较长的适应期。金牛座又往往是财富的象征，他们在投资理财方面常常有很独到的见解。金牛座的男人往往有大男人的倾向，而金牛女生则喜欢打扮自己。',
+        luckyNumber: '1, 9',
+        luckyColor: '粉红色',
+        luckyStone: '翡翠',
+        match: '处女座',
+        startMonth: 4,
+        startDay: 20,
+        endMonth: 5,
+        endDay: 20
+      },
+      '双子座': {
+        icon: '♊',
+        dateRange: '5月21日 - 6月21日',
+        element: '风象星座',
+        ruler: '水星守护',
+        personality: '双子座的人往往喜好新鲜事物，他们有着小聪明，但做事常常不太专一。与双子座的人聊天也许会让你觉得很兴奋，因为他们脑子中那些新鲜的、稀奇古怪的东西会让人充满好奇。也许是对新鲜事物的追求和好奇，会让人觉得他们很花心，其实不然，他们仅仅是喜欢新鲜而已。',
+        luckyNumber: '3, 5, 7',
+        luckyColor: '银色',
+        luckyStone: '玛瑙',
+        match: '水瓶座',
+        startMonth: 5,
+        startDay: 21,
+        endMonth: 6,
+        endDay: 21
+      },
+      '巨蟹座': {
+        icon: '♋',
+        dateRange: '6月22日 - 7月22日',
+        element: '水象星座',
+        ruler: '月亮守护',
+        personality: '巨蟹座的人往往充满了爱心，他们将母性的本质发挥到了极限。对他们来说，最重要的东西是家庭。他们往往就像蟹一样，在充满坚硬的外壳下面是柔软的内心。巨蟹座是最执着的星座，他们对朋友、对家人的忠实，做事会一直坚持到底。',
+        luckyNumber: '2, 7',
+        luckyColor: '白色',
+        luckyStone: '珍珠',
+        match: '天蝎座',
+        startMonth: 6,
+        startDay: 22,
+        endMonth: 7,
+        endDay: 22
+      },
+      '狮子座': {
+        icon: '♌',
+        dateRange: '7月23日 - 8月22日',
+        element: '火象星座',
+        ruler: '太阳守护',
+        personality: '狮子座的人热情、阳光、大方是他们性格上最大的特色。与他们性格上的优点不同，他们爱面子、自信得有点儿自大，常常会很在乎别人对自己的看法，也常常会因此而使自己不快乐。',
+        luckyNumber: '5, 9',
+        luckyColor: '金黄色',
+        luckyStone: '琥珀',
+        match: '白羊座',
+        startMonth: 7,
+        startDay: 23,
+        endMonth: 8,
+        endDay: 22
+      },
+      '处女座': {
+        icon: '♍',
+        dateRange: '8月23日 - 9月22日',
+        element: '土象星座',
+        ruler: '水星守护',
+        personality: '处女座的人，思虑周全，非常谦虚，谨慎保守，很有耐心，擅长分析，凡事要求做到尽善尽美，是个完美主义者。但易给人较大的压力，较被动严肃。',
+        luckyNumber: '4, 8',
+        luckyColor: '灰色',
+        luckyStone: '蓝宝石',
+        match: '金牛座',
+        startMonth: 8,
+        startDay: 23,
+        endMonth: 9,
+        endDay: 22
+      },
+      '天秤座': {
+        icon: '♎',
+        dateRange: '9月23日 - 10月23日',
+        element: '风象星座',
+        ruler: '金星守护',
+        personality: '天秤座的人很有气质，谈吐应对得体，善于与人沟通协调，是绝佳的谈判人才，属于迷人优雅派人物。只不过，思想易左右摇摆；追求外表光鲜，易失去自我。',
+        luckyNumber: '1, 2, 4',
+        luckyColor: '褐色',
+        luckyStone: '珊瑚',
+        match: '双子座',
+        startMonth: 9,
+        startDay: 23,
+        endMonth: 10,
+        endDay: 23
+      },
+      '天蝎座': {
+        icon: '♏',
+        dateRange: '10月24日 - 11月22日',
+        element: '水象星座',
+        ruler: '冥王星守护',
+        personality: '天蝎座的人精力旺盛、热情、善妒，占有欲极强。他们想要每天过得非常充实，如果失去了目标，他们很难认真地投入精力。天蝎是记仇的，会不顾一切地打击仇人。他们的一个成功优点，就是他们一旦定了目标，就会不达目的誓不罢休。',
+        luckyNumber: '3, 5',
+        luckyColor: '暗红色',
+        luckyStone: '碧玉',
+        match: '巨蟹座',
+        startMonth: 10,
+        startDay: 24,
+        endMonth: 11,
+        endDay: 22
+      },
+      '射手座': {
+        icon: '♐',
+        dateRange: '11月23日 - 12月21日',
+        element: '火象星座',
+        ruler: '木星守护',
+        personality: '射手座的人就像那只在弦上的箭一样，他们主动出击。为人乐观、诚实、热情、喜欢挑战。射手是十二星座中的冒险家，热爱旅行、喜欢赌博。意志力薄弱是射手座天生的弱点，如果沉迷赌博与游戏，后果不堪设想。',
+        luckyNumber: '6, 9',
+        luckyColor: '紫色',
+        luckyStone: '绿松石',
+        match: '白羊座',
+        startMonth: 11,
+        startDay: 23,
+        endMonth: 12,
+        endDay: 21
+      },
+      '摩羯座': {
+        icon: '♑',
+        dateRange: '12月22日 - 1月19日',
+        element: '土象星座',
+        ruler: '土星守护',
+        personality: '摩羯座是十二星座中最有耐心，为事最小心、也是最善良的星座。他们做事脚踏实地，也比较固执，不达目的是不会放手的。他们的忍耐力也是出奇的强大，同时也非常勤奋。他们心中总是背负着很多的责任感，但往往又很没有安全感，不会完全地相信别人。',
+        luckyNumber: '3, 7',
+        luckyColor: '褐色',
+        luckyStone: '黑玛瑙',
+        match: '处女座',
+        startMonth: 12,
+        startDay: 22,
+        endMonth: 1,
+        endDay: 19
+      },
+      '水瓶座': {
+        icon: '♒',
+        dateRange: '1月20日 - 2月18日',
+        element: '风象星座',
+        ruler: '天王星守护',
+        personality: '水瓶座的人很聪明，他们最大的特点是创新，追求独一无二的生活，个人主义色彩很浓重的星座。他们对人友善又注重隐私。水瓶座绝对算得上是"友谊之星"，他喜欢结交每一类朋友，但是确很难与他们交心，那需要很长的时间。',
+        luckyNumber: '4, 8',
+        luckyColor: '青色',
+        luckyStone: '紫水晶',
+        match: '双子座',
+        startMonth: 1,
+        startDay: 20,
+        endMonth: 2,
+        endDay: 18
+      },
+      '双鱼座': {
+        icon: '♓',
+        dateRange: '2月19日 - 3月20日',
+        element: '水象星座',
+        ruler: '海王星守护',
+        personality: '双鱼座是十二宫最后一个星座，他集合了所有星座的优缺点于一身，同时受水象星座的情绪化影响，使他们原来复杂的性格又添加了更复杂的一笔。双鱼座的人最大的优点是有一颗善良的心，他们愿意帮助别人，甚至是牺牲自己。',
+        luckyNumber: '5, 8',
+        luckyColor: '海蓝色',
+        luckyStone: '月光石',
+        match: '天蝎座',
+        startMonth: 2,
+        startDay: 19,
+        endMonth: 3,
+        endDay: 20
+      }
+    };
+    
+    // 初始化
+    function init() {
+      createBackground();
+      setupEventListeners();
+    }
+    
+    // 创建动态背景
+    function createBackground() {
+      const bg = document.getElementById('background');
+      const shapes = ['✨', '⭐', '🌟', '💫', '🌙'];
+      
+      for (let i = 0; i < 15; i++) {
+        const shape = document.createElement('div');
+        shape.classList.add('shape');
+        
+        // 随机大小
+        const size = Math.random() * 60 + 30;
+        shape.style.width = `${size}px`;
+        shape.style.height = `${size}px`;
+        
+        // 随机位置
+        shape.style.left = `${Math.random() * 100}%`;
+        shape.style.top = `${Math.random() * 100}%`;
+        
+        // 随机星座符号
+        shape.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+        shape.style.fontSize = `${size * 0.6}px`;
+        shape.style.display = 'flex';
+        shape.style.alignItems = 'center';
+        shape.style.justifyContent = 'center';
+        
+        // 随机动画
+        shape.style.animationDuration = `${Math.random() * 20 + 15}s`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bg.appendChild(shape);
+      }
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 标签切换
+      document.getElementById('dateTab').addEventListener('click', () => switchTab('date'));
+      document.getElementById('constellationTab').addEventListener('click', () => switchTab('constellation'));
+      
+      // 查询按钮
+      document.getElementById('queryByDate').addEventListener('click', queryByDate);
+      document.getElementById('queryByConstellation').addEventListener('click', queryByConstellation);
+      
+      // 输入框回车事件
+      document.getElementById('month').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') queryByDate();
+      });
+      document.getElementById('day').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') queryByDate();
+      });
+    }
+    
+    // 切换标签
+    function switchTab(tab) {
+      const dateTab = document.getElementById('dateTab');
+      const constellationTab = document.getElementById('constellationTab');
+      const dateQuery = document.getElementById('dateQuery');
+      const constellationQuery = document.getElementById('constellationQuery');
+      
+      if (tab === 'date') {
+        dateTab.classList.add('active');
+        constellationTab.classList.remove('active');
+        dateQuery.classList.remove('hidden');
+        constellationQuery.classList.add('hidden');
+      } else {
+        dateTab.classList.remove('active');
+        constellationTab.classList.add('active');
+        dateQuery.classList.add('hidden');
+        constellationQuery.classList.remove('hidden');
+      }
+      
+      // 隐藏结果
+      document.getElementById('resultSection').style.display = 'none';
+    }
+    
+    // 根据日期查询星座
+    function queryByDate() {
+      const month = parseInt(document.getElementById('month').value);
+      const day = parseInt(document.getElementById('day').value);
+      
+      if (!month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
+        alert('请输入正确的月份(1-12)和日期(1-31)');
+        return;
+      }
+      
+      const constellation = getConstellationByDate(month, day);
+      if (constellation) {
+        displayResult(constellation);
+      } else {
+        alert('请输入正确的日期');
+      }
+    }
+    
+    // 根据星座查询日期
+    function queryByConstellation() {
+      const constellation = document.getElementById('constellationSelect').value;
+      
+      if (!constellation) {
+        alert('请选择一个星座');
+        return;
+      }
+      
+      displayResult(constellation);
+    }
+    
+    // 根据日期获取星座
+    function getConstellationByDate(month, day) {
+      for (const [name, data] of Object.entries(constellationData)) {
+        if (isDateInRange(month, day, data)) {
+          return name;
+        }
+      }
+      return null;
+    }
+    
+    // 检查日期是否在星座范围内
+    function isDateInRange(month, day, data) {
+      if (data.startMonth === data.endMonth) {
+        return month === data.startMonth && day >= data.startDay && day <= data.endDay;
+      } else if (data.startMonth < data.endMonth) {
+        return (month === data.startMonth && day >= data.startDay) ||
+               (month === data.endMonth && day <= data.endDay) ||
+               (month > data.startMonth && month < data.endMonth);
+      } else {
+        // 跨年的情况（如摩羯座）
+        return (month === data.startMonth && day >= data.startDay) ||
+               (month === data.endMonth && day <= data.endDay) ||
+               (month > data.startMonth || month < data.endMonth);
+      }
+    }
+    
+    // 显示结果
+    function displayResult(constellation) {
+      const data = constellationData[constellation];
+      if (!data) return;
+      
+      // 更新星座卡片
+      document.getElementById('constellationIcon').textContent = data.icon;
+      document.getElementById('constellationName').textContent = constellation;
+      document.getElementById('constellationDate').textContent = data.dateRange;
+      document.getElementById('constellationElement').textContent = data.element;
+      document.getElementById('constellationRuler').textContent = data.ruler;
+      
+      // 更新详细信息
+      document.getElementById('personalityContent').textContent = data.personality;
+      document.getElementById('luckyNumber').textContent = data.luckyNumber;
+      document.getElementById('luckyColor').textContent = data.luckyColor;
+      document.getElementById('luckyStone').textContent = data.luckyStone;
+      document.getElementById('matchConstellation').textContent = data.match;
+      
+      // 显示结果区域
+      document.getElementById('resultSection').style.display = 'block';
+      
+      // 滚动到结果区域
+      setTimeout(() => {
+        document.getElementById('resultSection').scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+    
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
